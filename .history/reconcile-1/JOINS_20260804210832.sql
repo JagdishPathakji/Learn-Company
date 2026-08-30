@@ -1,0 +1,11 @@
+SELECT 
+    v.title AS article_title,
+    -- GROUP_CONCAT squashes all category names into a single string, separated by a comma
+    GROUP_CONCAT(c.name SEPARATOR ', ') AS categories
+FROM ARTICLE a
+INNER JOIN ARTICLE_VERSION v ON a.current_published_version_id = v.version_id
+INNER JOIN ARTICLE_CATEGORY ac ON a.article_id = ac.article_id
+INNER JOIN CATEGORY c ON ac.category_id = c.category_id
+WHERE a.article_id = UUID_TO_BIN('AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA', 1)
+-- We must Group By the article so MySQL knows which rows to squash together
+GROUP BY a.article_id, v.title;

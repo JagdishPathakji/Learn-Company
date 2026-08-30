@@ -1,0 +1,21 @@
+{
+  "CSharp": {
+    "completedTopics": [
+      "Introduction - Visual studio 2022 Overview",
+      "Introduction - Programming Guideline & Commenting",
+      "C# Fundamentals - Introduction",
+      "C# Fundamentals - Scope & Accessibility",
+      "C# Fundamentals - Namespace & Libraries",
+      "C# Fundamentals - Enumerations",
+      "C# Fundamentals - DataTable"
+    ],
+    "lastProcessedRow": 8,
+    "customTopics": [
+      "Top-Level Statements"
+    ]
+  },
+  "MySQL": {
+    "completedTopics": [],
+    "lastProcessedRow": 1
+  }
+}

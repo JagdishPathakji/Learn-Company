@@ -1,0 +1,6 @@
+1. look_tables.sql (Creates the DB and base lookups)
+user_tables.sql (Depends on ROLE)
+article_tables.sql (Depends on USER and CATEGORY)
+versionining-tables.sql (Depends on ARTICLE, STATUS, BLOCK_TYPE, and USER)
+editor_tables.sql (Depends on ARTICLE_VERSION and USER)
+review_tables.sql (Depends on ARTICLE and USER)

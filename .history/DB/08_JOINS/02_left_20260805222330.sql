@@ -1,0 +1,1 @@
+-- 2. List All Articles and their Assigned Categories (Including uncategorized articles)

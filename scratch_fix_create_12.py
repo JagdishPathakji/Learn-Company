@@ -1,0 +1,442 @@
+import os
+
+filepath = r'c:\Users\patha\OneDrive\Desktop\knowledge-base\website\topics\csharp\12-file-system.html'
+
+html_content = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File System (Advanced)</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <style>
+        .arch-diagram { display: flex; flex-direction: column; gap: 20px; background: #1e293b; padding: 40px; border-radius: 8px; margin: 30px 0; color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .arch-phase { border: 2px dashed #64748b; padding: 25px; border-radius: 8px; background: #0f172a; position: relative; }
+        .arch-phase-title { font-size: 1.2rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        
+        .catch-list { list-style: none; padding: 0; }
+        .catch-item { background: #fecaca; border-left: 5px solid #ef4444; padding: 20px; margin-bottom: 20px; border-radius: 4px; color: #7f1d1d; }
+        .catch-item h3 { margin-top: 0; color: #991b1b; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; margin-bottom: 10px; }
+        .catch-item p { margin-bottom: 0; font-size: 1.05rem; }
+        .catch-item code { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; color: #991b1b; font-weight: bold; }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="sidebar-category">C# Training</div>
+        <ul>
+            <li><a href="01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+            <li><a href="02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+            <li><a href="03-csharp-dotnet-history.html">3. C# Fundamentals - Intro</a></li>
+            <li><a href="04-scope-and-accessibility.html">4. Scope & Accessibility</a></li>
+            <li><a href="05-namespace-and-libraries.html">5. Namespace & Libraries</a></li>
+            <li><a href="06-enumerations.html">6. Enumerations (Enums)</a></li>
+            <li><a href="07-datatable.html">7. DataTable</a></li>
+            <li><a href="08-date-string-math.html">8. Date/String/Math</a></li>
+            <li><a href="09-file-operations.html">9. File Operations</a></li>
+            <li><a href="10-advanced-types.html">10. Types (AEIP)</a></li>
+            <li><a href="11-generics.html">11. Generics</a></li>
+            <li><a href="12-file-system.html" class="active">12. File System</a></li>
+        </ul>
+        <div class="sidebar-category">Deep Dives (Custom)</div>
+        <ul>
+            <li><a href="custom-01-top-level-statements.html">Top-Level Statements vs Main</a></li>
+        </ul>
+    </aside>
+    
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>Advanced File System Operations</h1>
+            <p class="metadata">Difficulty: Advanced | Category: System.IO</p>
+        </div>
+
+        <div class="callout callout-info">
+            <span class="callout-title">The System.IO Core Classes</span>
+            <p>While basic File Operations (Topic 9) covers simple reading and writing, enterprise applications need high-performance File manipulation. This topic covers the difference between <strong>Static vs Instance</strong> IO classes, safe string <strong>Path</strong> manipulation, advanced <strong>File.Replace</strong> logic, and low-level <strong>Streams</strong>.</p>
+        </div>
+
+        <div class="topic-tabs">
+            <button class="topic-tab-btn active" onclick="switchTopicTab('tab-classes')">1. Static vs Instance (FileInfo)</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-path')">2. The Path Class</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-crud')">3. Advanced Move & Replace</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-streams')">4. FileStreams & Encoding</button>
+        </div>
+
+        <!-- TAB 1: STATIC VS INSTANCE -->
+        <div id="tab-classes" class="topic-tab-content active">
+            <h2>Static vs Instance Classes</h2>
+            <p>The <code>System.IO</code> namespace provides two ways to interact with files: Static (<code>File</code>, <code>Directory</code>) and Instance (<code>FileInfo</code>, <code>DirectoryInfo</code>).</p>
+            
+            <div class="callout callout-warn">
+                <span class="callout-title">The Performance Difference</span>
+                <p>When you call a static method like <code>File.Exists(path)</code>, the OS runs a full security and permission check every single time. If you run it 10,000 times in a loop, it is extremely slow.</p>
+                <p>When you create an instance of <code>new FileInfo(path)</code>, the data is <strong>cached</strong> after the first access. Calling <code>fi.Exists</code> 10,000 times is lightning fast because it just reads from RAM.</p>
+                <p><strong>The Catch:</strong> Because <code>FileInfo</code> is cached, if another program deletes the file while your app is running, <code>fi.Exists</code> will still say True! You MUST call <code>fi.Refresh()</code> if you suspect the file was modified externally.</p>
+            </div>
+
+            <div class="code-container" style="border-radius: 6px 6px 0 0;">
+                <div class="code-header"><span>C# - File vs FileInfo</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">using System;
+using System.IO;
+
+class Program {
+    static void Main() {
+        string path = "demo.txt";
+        File.WriteAllText(path, "Hello File System !");
+
+        // --- 1. Using static File class ---
+        // Every call below independently checks the OS path & permissions
+        Console.WriteLine("---Using static File class---");
+        bool exists = File.Exists(path);
+        DateTime created = File.GetCreationTime(path);
+        DateTime lastWrite = File.GetLastWriteTime(path);
+        // Note: The static File class has no direct .Length property!
+
+        // --- 2. Using instance FileInfo class ---
+        Console.WriteLine("\n--- Using instance FileInfo class---");
+        FileInfo fileInfo = new FileInfo(path);
+        
+        // Info is cached after first access, making it very fast
+        Console.WriteLine($"Exists: {fileInfo.Exists}");
+        Console.WriteLine($"Created: {fileInfo.CreationTime}");
+        Console.WriteLine($"Length: {fileInfo.Length} bytes");
+        Console.WriteLine($"Extension: {fileInfo.Extension}");
+        
+        // --- 3. Modifying Metadata (Attributes) ---
+        // You can use FileInfo to easily modify system attributes
+        fileInfo.IsReadOnly = true;
+        
+        // Bitwise operators can add/remove specific flags
+        fileInfo.Attributes |= FileAttributes.Hidden; // ADD hidden flag
+        
+        Console.WriteLine($"Attributes: {fileInfo.Attributes}");
+    }   
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- TAB 2: PATH CLASS -->
+        <div id="tab-path" class="topic-tab-content">
+            <h2>The Path Class</h2>
+            <p>The <code>Path</code> class is purely for string manipulation. It does not touch the file system at all (it doesn't check if a file exists or create anything). It just works with path strings intelligently, respecting OS conventions.</p>
+            
+            <div class="callout callout-danger">
+                <span class="callout-title">The Path.Combine Root Trap</span>
+                <p>Why do we use <code>Path.Combine("Folder", "file.txt")</code> instead of concatenating strings like <code>"Folder\\" + "file.txt"</code>? Because concatenating is fragile and breaks cross-platform (Windows uses <code>\</code>, Linux uses <code>/</code>). <code>Path.Combine</code> uses the correct <code>Path.DirectorySeparatorChar</code> automatically.</p>
+                <p><strong>The Trap:</strong> If any segment after the first segment is an <strong>ABSOLUTE</strong> path (rooted), <code>Path.Combine</code> discards everything before it!<br>
+                Example: <code>Path.Combine("C:\\Data", "D:\\OtherDrive\\file.txt")</code> returns just <code>D:\OtherDrive\file.txt</code>.</p>
+            </div>
+
+            <div class="code-container" style="border-radius: 6px 6px 0 0;">
+                <div class="code-header"><span>C# - Path Decomposition</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">using System;
+using System.IO;
+
+class PathDemo {
+    static void Main() {
+        string samplePath = @"C:\Projects\MyApp\bin\Debug\report_2024.pdf";
+
+        Console.WriteLine("=== Decomposing a Path ===");
+        Console.WriteLine($"Full path:                   {samplePath}");
+        Console.WriteLine($"GetFileName:                 {Path.GetFileName(samplePath)}"); // report_2024.pdf
+        Console.WriteLine($"GetFileNameWithoutExtension: {Path.GetFileNameWithoutExtension(samplePath)}"); // report_2024
+        Console.WriteLine($"GetExtension:                {Path.GetExtension(samplePath)}"); // .pdf
+        Console.WriteLine($"GetDirectoryName:            {Path.GetDirectoryName(samplePath)}"); // C:\Projects\MyApp\bin\Debug
+        Console.WriteLine($"GetPathRoot:                 {Path.GetPathRoot(samplePath)}"); // C:\
+
+        Console.WriteLine("\n=== Changing Extensions ===");
+        string newExt = Path.ChangeExtension(samplePath, ".docx");
+        Console.WriteLine($"Changed extension: {newExt}"); // report_2024.docx
+        
+        string removedExt = Path.ChangeExtension(samplePath, null);
+        Console.WriteLine($"Removed extension: {removedExt}"); // report_2024
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- TAB 3: ADVANCED CRUD -->
+        <div id="tab-crud" class="topic-tab-content">
+            <h2>Advanced Move, Replace, & Retries</h2>
+            <p>Moving and copying files in an enterprise environment requires careful handling of overwrites, backups, and transient OS locks.</p>
+            
+            <div class="callout callout-warn">
+                <span class="callout-title">The Cross-Drive Move Penalty</span>
+                <p>If you use <code>File.Move</code> on the <strong>same drive</strong> (e.g. C: to C:), it is near-instant. The OS just rewrites the directory entry; the physical data never moves.</p>
+                <p>If you use <code>File.Move</code> <strong>across drives</strong> (e.g. C: to D:), .NET internally does a full COPY to the new location, then DELETES the original. This takes time, temporarily uses double disk space, and can fail midway if the app crashes!</p>
+            </div>
+
+            <div class="code-container" style="border-radius: 6px 6px 0 0;">
+                <div class="code-header"><span>C# - File.Replace and Retry Patterns</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">using System;
+using System.IO;
+using System.Threading;
+
+class AdvancedCrudDemo {
+    static void Main() {
+        // -------------------------------------------------
+        // 1. File.Replace (The 3-Way Atomic Swap)
+        // -------------------------------------------------
+        // Built specifically to say: "swap this file in, but keep a backup of what was there before."
+        // 1. Deletes backup file (if exists)
+        // 2. Renames liveFile -> backupFile
+        // 3. Renames newVersion -> liveFile
+        
+        string newVersion = "config_new.txt";
+        string liveFile = "config_live.txt";
+        string backupFile = "config_backup.txt";
+
+        File.WriteAllText(liveFile, "old config v1");
+        File.WriteAllText(newVersion, "new config v2");
+
+        // The liveFile MUST already exist or this will crash!
+        File.Replace(newVersion, liveFile, backupFile);
+        
+        Console.WriteLine($"Live file contains: {File.ReadAllText(liveFile)}"); // v2
+        Console.WriteLine($"Backup contains: {File.ReadAllText(backupFile)}");   // v1
+
+        // -------------------------------------------------
+        // 2. Transient Lock Retry Pattern
+        // -------------------------------------------------
+        // In real apps, files get locked briefly by Antivirus or backups.
+        // A single-attempt Move will crash. We must wrap it in a retry loop.
+        
+        string source = "source.txt";
+        File.WriteAllText(source, "data");
+        
+        CopyWithRetry(source, "dest.txt", maxAttempts: 3, delayMs: 200);
+    }
+    
+    // Only retries on IOException (locked file). Does NOT retry on UnauthorizedAccessException.
+    static bool CopyWithRetry(string source, string dest, int maxAttempts, int delayMs) {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                File.Copy(source, dest, overwrite: true);
+                return true; 
+            }
+            catch (IOException ex) when (attempt < maxAttempts) {
+                // The 'when' filter ensures this block only runs if we have attempts left.
+                Console.WriteLine($"Attempt {attempt} locked. Retrying in {delayMs}ms...");
+                Thread.Sleep(delayMs);
+            }
+        }
+        
+        // Final attempt outside the loop allows the real exception to bubble up and crash
+        File.Copy(source, dest, overwrite: true);
+        return true;
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- TAB 4: STREAMS -->
+        <div id="tab-streams" class="topic-tab-content">
+            <h2>FileStream and Encoding</h2>
+            <p>A Stream is a sequence of bytes flowing between your program and some source. Instead of loading everything into RAM at once (like <code>File.ReadAllText</code>), a stream lets you read/write in small memory chunks, making it mandatory for large files.</p>
+            
+            <div class="callout callout-info">
+                <span class="callout-title">The Three Pillars of FileStream</span>
+                <ul>
+                    <li><strong>FileMode:</strong> What to do (<code>Create</code>, <code>Open</code>, <code>Append</code>, <code>Truncate</code>).</li>
+                    <li><strong>FileAccess:</strong> Permissions (<code>Read</code>, <code>Write</code>, <code>ReadWrite</code>).</li>
+                    <li><strong>FileShare:</strong> What <em>other</em> programs can do while you have it open (<code>None</code> fully locks it, <code>Read</code> lets others view it).</li>
+                </ul>
+            </div>
+
+            <div class="code-container" style="border-radius: 6px 6px 0 0;">
+                <div class="code-header"><span>C# - Byte Arrays and Encoding</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">using System;
+using System.IO;
+using System.Text;
+
+class StreamBasicDemo {
+    static void Main() {
+        string path = "stream_demo.txt";
+
+        // ==========================================
+        // 1. WRITING WITH A STREAM
+        // ==========================================
+        // We use a 'using' block so the stream automatically closes and flushes 
+        // its memory when finished, preventing memory leaks!
+        using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None)) {
+            
+            // Text is a human concept. We MUST use Encoding to convert it into raw Bytes.
+            // UTF-8 is the global standard (1 byte for English, 2-4 bytes for Emoji).
+            byte[] data = Encoding.UTF8.GetBytes("Hello via FileStream");
+            
+            // fs.Write(array, start_index, amount_of_bytes_to_write)
+            fs.Write(data, 0, data.Length);
+        } 
+
+        // ==========================================
+        // 2. READING WITH A STREAM
+        // ==========================================
+        using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+            
+            // Create an empty byte array the exact size of the file
+            byte[] buffer = new byte[fs.Length]; 
+            
+            // fs.Read(array_to_fill, start_index_in_array, amount_to_attempt_to_read)
+            fs.Read(buffer, 0, buffer.Length); 
+            
+            // Since we wrote with UTF8, we MUST decode with UTF8
+            string text = Encoding.UTF8.GetString(buffer); 
+            Console.WriteLine($"Read back: {text}");
+        }
+
+        File.Delete(path);
+    }
+}</code></pre>
+            </div>
+            <div class="console-output"><strong>Console Output:</strong><pre>Read back: Hello via FileStream</pre></div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="11-generics.html">&larr; Previous: Generics</a>
+            <a href="#">Next: Serialization &rarr;</a>
+        </div>
+    </main>
+    
+    <script src="../../js/ui-enhancements.js"></script>
+
+    <!-- Prism Syntax Highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+
+    <!-- Personal Notes Panel -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!&#10;&#10;Wrap code in triple backticks like this:&#10;```csharp&#10;int x = 5;&#10;```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+
+    <script>
+        function toggleNotes() {
+            if (window.hasDragged) { window.hasDragged = false; return; }
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                
+                prev.innerHTML = marked.parse(ta.value);
+                
+                if (window.Prism) {
+                    Prism.highlightAllUnder(prev);
+                }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        let fileName = window.location.pathname.split('/').pop();
+        if (!fileName) fileName = 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        
+        if(localStorage.getItem(pageKey)) {
+            notesTextarea.value = localStorage.getItem(pageKey);
+        }
+
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('kb_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+        if(localStorage.getItem('kb_sidebar_collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+
+    <!-- Draggable Notes Button Script -->
+    <script>
+        const dragBtn = document.querySelector('.notes-toggle-btn');
+        let isDragging = false;
+        window.hasDragged = false; 
+        let offsetX, offsetY;
+
+        const savedX = localStorage.getItem('kb_notes_btn_x');
+        const savedY = localStorage.getItem('kb_notes_btn_y');
+        if (savedX && savedY) {
+            dragBtn.style.left = savedX + 'px';
+            dragBtn.style.top = savedY + 'px';
+            dragBtn.style.bottom = 'auto'; 
+            dragBtn.style.right = 'auto';  
+        }
+
+        dragBtn.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            window.hasDragged = false; 
+            offsetX = e.clientX - dragBtn.getBoundingClientRect().left;
+            offsetY = e.clientY - dragBtn.getBoundingClientRect().top;
+            dragBtn.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            window.hasDragged = true; 
+            
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+            
+            newX = Math.max(0, Math.min(newX, window.innerWidth - dragBtn.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - dragBtn.offsetHeight));
+
+            dragBtn.style.left = newX + 'px';
+            dragBtn.style.top = newY + 'px';
+            dragBtn.style.bottom = 'auto';
+            dragBtn.style.right = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                dragBtn.style.cursor = 'grab';
+                localStorage.setItem('kb_notes_btn_x', dragBtn.style.left.replace('px', ''));
+                localStorage.setItem('kb_notes_btn_y', dragBtn.style.top.replace('px', ''));
+            }
+        });
+    </script>
+</body>
+</html>
+'''
+
+with open(filepath, 'w', encoding='utf-8') as f:
+    f.write(html_content)

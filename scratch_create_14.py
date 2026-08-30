@@ -1,0 +1,628 @@
+import os
+
+filepath = r'c:\Users\patha\OneDrive\Desktop\knowledge-base\website\topics\csharp\14-extension-methods.html'
+
+html_content = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>C# Extension Methods</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        .concept-block { background: var(--bg-surface); padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-left: 4px solid var(--accent); color: var(--text-primary); line-height: 1.7; }
+        .concept-title { color: var(--accent); font-size: 1.5rem; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-weight: 700; }
+        .concept-section { margin-bottom: 15px; }
+        .concept-label { font-weight: 700; color: var(--text-secondary); display: inline-block; width: 150px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px;}
+        .concept-value { color: var(--text-primary); }
+        
+        .mistake-box { background: var(--callout-danger-bg); border-left: 4px solid var(--callout-danger-border); padding: 15px; margin-top: 15px; border-radius: 4px; color: var(--text-primary); line-height: 1.6; }
+        .mistake-title { color: var(--callout-danger-border); font-weight: bold; margin-bottom: 5px; display: block; }
+        
+        .advanced-box { background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8b5cf6; padding: 15px; margin-top: 15px; border-radius: 4px; color: #ddd6fe; line-height: 1.6; }
+        .advanced-title { color: #c4b5fd; font-weight: bold; margin-bottom: 5px; display: block; }
+        
+        .evolution-step { background: var(--bg-main); padding: 15px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); line-height: 1.6; }
+        .evolution-step h4 { margin-top: 0; color: #10b981; font-size: 1.2rem; margin-bottom: 10px; }
+
+        details { background: var(--border-color); padding: 10px 15px; border-radius: 4px; margin-bottom: 10px; cursor: pointer; }
+        summary { font-weight: bold; color: var(--text-primary); outline: none; }
+        details > div { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--bg-surface); color: var(--text-secondary); cursor: text; line-height: 1.6; }
+        
+        .diagram-box { background: var(--bg-main); padding: 20px; border-radius: 6px; font-family: monospace; color: var(--accent); margin: 15px 0; border: 1px solid var(--border-color); white-space: pre; overflow-x: auto; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="sidebar-category">C# Training</div>
+        <ul>
+            <li><a href="01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+            <li><a href="02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+            <li><a href="03-csharp-dotnet-history.html">3. C# Fundamentals - Intro</a></li>
+            <li><a href="04-scope-and-accessibility.html">4. Scope & Accessibility</a></li>
+            <li><a href="05-namespace-and-libraries.html">5. Namespace & Libraries</a></li>
+            <li><a href="06-enumerations.html">6. Enumerations (Enums)</a></li>
+            <li><a href="07-datatable.html">7. DataTable</a></li>
+            <li><a href="08-date-string-math.html">8. Date/String/Math</a></li>
+            <li><a href="09-file-operations.html">9. File Operations</a></li>
+            <li><a href="10-advanced-types.html">10. Types (AEIP)</a></li>
+            <li><a href="11-generics.html">11. Generics</a></li>
+            <li><a href="12-file-system.html">12. File System</a></li>
+            <li><a href="13-lambda-expressions.html">13. Lambda Expressions</a></li>
+            <li><a href="14-extension-methods.html" class="active">14. Extension Methods</a></li>
+        </ul>
+        <div class="sidebar-category">Deep Dives (Custom)</div>
+        <ul>
+            <li><a href="custom-01-top-level-statements.html">Top-Level Statements vs Main</a></li>
+        </ul>
+    </aside>
+    
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>Extension Methods</h1>
+            <p class="metadata">Difficulty: Beginner / Intermediate | Category: C# Fundamentals</p>
+        </div>
+
+        <div class="callout callout-info">
+            <span class="callout-title">The Final Piece Before LINQ</span>
+            <p>You have mastered Lambda Expressions, which describe <em>what</em> you want to do. Now you will learn <strong>Extension Methods</strong>, which provide the powerful dot-notation syntax used to execute those actions. Together, Lambdas and Extension Methods are the entire foundation of LINQ.</p>
+        </div>
+
+        <div class="topic-tabs">
+            <button class="topic-tab-btn active" onclick="switchTopicTab('tab-core')">1. Core Concepts</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-params')">2. Parameters & Collections</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-lambdas')">3. Lambdas, Rules & LINQ</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-demo')">4. Final Demo</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-practice')">5. Practice</button>
+        </div>
+
+        <!-- TAB 1: CORE CONCEPTS -->
+        <div id="tab-core" class="topic-tab-content active">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">1. Start With the Problem</h3>
+                <p>Imagine we have a simple <code>Article</code> class in our Knowledge Base. We want to count how many words are in the article's content.</p>
+                
+                <p>Usually, we would write a <strong>Static Helper Method</strong> inside some utility class:</p>
+                <pre><code class="language-csharp">public static int GetWordCount(Article article)
+{
+    return article.Content.Split(' ').Length;
+}</code></pre>
+                
+                <p>And we would call it like this:</p>
+                <pre><code class="language-csharp">int count = ArticleHelper.GetWordCount(article);</code></pre>
+
+                <p>There is nothing wrong with this code. However, object-oriented programmers love the natural, left-to-right reading flow of dot-notation. It would be much more convenient and readable to write:</p>
+                <pre><code class="language-csharp">int count = article.GetWordCount();</code></pre>
+                
+                <div class="callout callout-warn">
+                    <span class="callout-title">The Problem</span>
+                    <p>How can we get this convenient dot-notation syntax (<code>article.GetWordCount()</code>) <strong>without actually modifying the original <code>Article</code> class?</strong> (Perhaps the Article class is locked in a library we don't own, or we just want to keep it clean).</p>
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">2. What is an Extension Method?</h3>
+                <div class="concept-section"><span class="concept-label">What it is:</span><span class="concept-value">An extension method is a static method that can be called using instance-style syntax (dot notation) on an existing type.</span></div>
+                <div class="concept-section"><span class="concept-label">Why it exists:</span><span class="concept-value">To allow you to "extend" existing types with new functionality without modifying the original class code.</span></div>
+                
+                <ul style="margin-top: 15px;">
+                    <li><strong>It does not</strong> modify the original class.</li>
+                    <li><strong>It does not</strong> add a real method into the original class.</li>
+                    <li><strong>It is actually</strong> implemented as a standard static method behind the scenes.</li>
+                    <li>C# just provides <strong>special syntax</strong> that lets us call it using dot notation.</li>
+                </ul>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">3. Creating Your First Extension Method</h3>
+                <p>Let's convert our static helper method into an Extension Method.</p>
+                
+                <pre><code class="language-csharp">public static class ArticleExtensions
+{
+    public static int GetWordCount(this Article article)
+    {
+        return article.Content.Split(' ').Length;
+    }
+}</code></pre>
+
+                <p style="margin-top:20px;">Let's break down <strong>every important part</strong> of this structure:</p>
+                
+                <div class="evolution-step">
+                    <h4>Why must the class be <code>static</code>?</h4>
+                    <p>C# requires that all extension methods be placed inside a non-nested, <code>static class</code>. Because extension methods don't belong to a specific object instance, their container must also be static.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Why must the method be <code>static</code>?</h4>
+                    <p>Because it doesn't actually exist inside the <code>Article</code> class. You are not creating an instance method. You are creating a utility method that takes an Article as a parameter.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Why is <code>this</code> written before <code>Article</code>?</h4>
+                    <p>This is the magic keyword. By placing the word <code>this</code> in front of the very first parameter, you are telling the C# compiler: <em>"Treat this static method as an Extension Method for the Article class!"</em></p>
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">4. Understand the <code>this</code> Parameter</h3>
+                <p>The <code>this</code> modifier on the first parameter is the most important part of this topic.</p>
+                
+                <pre><code class="language-csharp">public static int GetWordCount(this Article article)</code></pre>
+                
+                <p>When you call the method using dot-notation, the object <em>before</em> the dot automatically becomes that first parameter.</p>
+
+                <div class="diagram-box">article.GetWordCount()
+        ↓
+ArticleExtensions.GetWordCount(article)</div>
+
+                <p>The <code>this</code> keyword here has a <strong>completely different meaning</strong> than when you use it normally inside a class (e.g., <code>this.Title = "Hello";</code>). When used in a method parameter, it simply instructs the compiler to enable extension-method syntax.</p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">5. Extension Method vs Normal Static Method</h3>
+                <p>Behind the scenes, the compiler treats an extension method call exactly like a normal static method call. They both reach the exact same implementation.</p>
+                
+                <table style="width: 100%; text-align: left; margin-top: 15px; border-collapse: collapse; color: #e2e8f0;">
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <th style="padding: 10px;">Normal Static Call (Conceptual)</th>
+                        <th style="padding: 10px;">Extension Method Syntax (Actual)</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px;"><code>ArticleExtensions.GetWordCount(article)</code></td>
+                        <td style="padding: 10px;"><code>article.GetWordCount()</code></td>
+                    </tr>
+                </table>
+
+                <p style="margin-top: 20px;"><strong>Key Takeaway:</strong> Extension methods mainly provide a more natural, readable, left-to-right way to call certain static methods. The method has NOT been physically inserted into the <code>Article</code> class.</p>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: PARAMETERS & COLLECTIONS -->
+        <div id="tab-params" class="topic-tab-content">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">6. Extension Method With Additional Parameters</h3>
+                <p>Extension methods can take multiple parameters. However, <strong>only the first parameter uses the <code>this</code> keyword</strong>.</p>
+                
+                <pre><code class="language-csharp">public static string GetShortTitle(this Article article, int maxLength)
+{
+    if (article.Title.Length <= maxLength)
+    {
+        return article.Title;
+    }
+    return article.Title.Substring(0, maxLength) + "...";
+}</code></pre>
+
+                <p>When you call the method, you skip the first parameter (the object before the dot provides it), and you pass the remaining parameters inside the parentheses.</p>
+                
+                <pre><code class="language-csharp">string title = article.GetShortTitle(30);</code></pre>
+
+                <div class="diagram-box">this Article article
+        ↓
+object before the dot (article)
+
+int maxLength
+        ↓
+normal argument supplied in parentheses (30)</div>
+
+                <p>Conceptually, the compiler translates this to: <code>ArticleExtensions.GetShortTitle(article, 30);</code></p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">7. Extending Types You Did Not Create</h3>
+                <p>The greatest power of Extension Methods is that you can attach them to types you don't even own—like built-in .NET types (<code>string</code>, <code>int</code>, <code>DateTime</code>).</p>
+                
+                <pre><code class="language-csharp">public static class StringExtensions
+{
+    public static bool IsValidArticleTitle(this string title)
+    {
+        return !string.IsNullOrWhiteSpace(title) && title.Length >= 5;
+    }
+}</code></pre>
+
+                <p>Now, every string in your application suddenly has this new capability:</p>
+                <pre><code class="language-csharp">if (article.Title.IsValidArticleTitle())
+{
+    Console.WriteLine("Valid title!");
+}</code></pre>
+                
+                <p>We did not modify Microsoft's <code>string</code> class; we simply built a static helper that the compiler lets us call seamlessly.</p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">8. Extension Methods With Collections</h3>
+                <p>You can extend entire collections of objects. The most common interface for collections in C# is <code>IEnumerable&lt;T&gt;</code> (which Lists, Arrays, and Databases all implement).</p>
+                
+                <pre><code class="language-csharp">public static class ArticleCollectionExtensions
+{
+    // Extending a collection of articles
+    public static int CountPublished(this IEnumerable&lt;Article&gt; articles)
+    {
+        int count = 0;
+        foreach (Article article in articles)
+        {
+            if (article.Status == EnmArticleStatus.Published)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+}</code></pre>
+
+                <p>Usage:</p>
+                <pre><code class="language-csharp">List&lt;Article&gt; myArticles = GetArticles();
+int count = myArticles.CountPublished();</code></pre>
+
+                <p>By extending <code>IEnumerable&lt;Article&gt;</code> instead of <code>List&lt;Article&gt;</code>, this method will automatically work on Lists, Arrays, HashSets, or any other enumerable collection of articles!</p>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: LAMBDAS, RULES & LINQ -->
+        <div id="tab-lambdas" class="topic-tab-content">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">9. Extension Methods + Lambda Expressions</h3>
+                <p>Let's combine Extension Methods with what we learned in the previous module: <strong>Lambda Expressions</strong>.</p>
+                
+                <p>We can create an extension method that accepts a <code>Predicate&lt;Article&gt;</code> (a true/false filtering rule):</p>
+                
+                <pre><code class="language-csharp">public static class ListExtensions
+{
+    public static List&lt;Article&gt; FilterArticles(this List&lt;Article&gt; articles, Predicate&lt;Article&gt; condition)
+    {
+        return articles.FindAll(condition);
+    }
+}</code></pre>
+
+                <p>Now, we can pass a Lambda Expression into our new Extension Method!</p>
+
+                <pre><code class="language-csharp">List&lt;Article&gt; published = articles.FilterArticles(article => article.Status == EnmArticleStatus.Published);</code></pre>
+
+                <div class="diagram-box">articles
+   ↓
+extension method
+   ↓
+FilterArticles(...)
+   ↓
+lambda is passed as Predicate&lt;Article&gt;
+   ↓
+FindAll executes the condition</div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">10. Why This Matters for LINQ</h3>
+                <p>If you understand the code block above, you already understand the architecture of LINQ!</p>
+                
+                <p>LINQ is essentially a massive library of Extension Methods (like <code>Where</code>, <code>Select</code>, <code>OrderBy</code>) that accept Lambda Expressions to describe filtering, selecting, and ordering logic.</p>
+
+                <pre><code class="language-csharp">// This is actual LINQ!
+var publishedArticles = articles.Where(article => article.Status == EnmArticleStatus.Published);</code></pre>
+
+                <div class="diagram-box">Lambda Expressions (describe the logic)
+        +
+Extension Methods (provide the dot-notation)
+        ↓
+Important foundation for LINQ</div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">11. Important Rules and Common Mistakes</h3>
+                
+                <div class="evolution-step">
+                    <h4>Mistake 1 — Missing <code>static</code> on the method</h4>
+                    <code>public bool IsPublished(this Article article)</code>
+                    <p><strong>Error:</strong> Extension methods must be static. You cannot use <code>this</code> on the first parameter of an instance method.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Mistake 2 — Missing <code>this</code></h4>
+                    <code>public static bool IsPublished(Article article)</code>
+                    <p><strong>Fact:</strong> Without the <code>this</code> keyword, it is perfectly valid C#, but it is just a normal static helper method. You won't be able to use dot-notation (<code>article.IsPublished()</code>).</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Mistake 3 — Non-static containing class</h4>
+                    <p><strong>Error:</strong> The class containing the extension method must be marked as <code>static class</code>. It cannot be a normal class.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Mistake 4 — Thinking the original class was modified</h4>
+                    <p><strong>Fact:</strong> The original <code>Article</code> class is completely untouched. The method lives permanently in your static extension class.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Mistake 5 — Private member access</h4>
+                    <p><strong>Fact:</strong> Extension methods do NOT get special access to private variables in the class they extend. They can only interact with public properties and methods, just like any other outside class.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Mistake 6 — Instance method precedence</h4>
+                    <p><strong>Fact:</strong> If the <code>Article</code> class already has a normal method called <code>GetWordCount()</code>, and you write an extension method with the exact same name, the compiler will <strong>always run the original instance method</strong>. Extension methods never override existing instance methods.</p>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>Mistake 7 — Namespace visibility</h4>
+                    <p><strong>Fact:</strong> If your extension method is in a namespace called <code>KnowledgeBase.Extensions</code>, you MUST have <code>using KnowledgeBase.Extensions;</code> at the top of your file to use the dot-notation.</p>
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">12. When Should You Use an Extension Method?</h3>
+                <p>These are practical guidelines, not strict rules.</p>
+                
+                <div class="concept-section"><span class="concept-label">Use them when:</span><span class="concept-value">The functionality logically relates to an existing type; you want highly reusable behavior; you cannot modify the original type (like <code>string</code>); the extension makes calling code significantly clearer.</span></div>
+                <div class="concept-section"><span class="concept-label">Avoid them when:</span><span class="concept-value">The functionality is highly specific to one isolated part of your app; a normal service/helper method would be clearer; it would make the type confusing by adding too many unrelated methods.</span></div>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: FINAL DEMO -->
+        <div id="tab-demo" class="topic-tab-content">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">13. Complete Knowledge Base Example</h3>
+                <p>This complete, traditional C# console program brings together all the Extension Method concepts.</p>
+                
+                <div class="code-container" style="border-radius: 6px 6px 0 0;">
+                    <div class="code-header"><span>C# - Program.cs</span><button class="copy-btn">Copy</button></div>
+                    <pre><code class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace KnowledgeBase 
+{
+    // 1. Domain Classes
+    public enum EnmArticleStatus { Draft, Published }
+
+    public class Article 
+    {
+        public string Title { get; set; }
+        public EnmArticleStatus Status { get; set; }
+    }
+
+    // 2. Extension Class (MUST BE STATIC)
+    public static class ArticleExtensions 
+    {
+        // 3. Extension Method Structure (this Article article)
+        public static bool IsPublished(this Article article) 
+        {
+            return article.Status == EnmArticleStatus.Published;
+        }
+
+        // 6. Passing Additional Parameters
+        public static string GetShortTitle(this Article article, int maxLength) 
+        {
+            if (article.Title.Length <= maxLength) return article.Title;
+            return article.Title.Substring(0, maxLength) + "...";
+        }
+
+        // 8. Extending Collections
+        public static int CountPublished(this IEnumerable&lt;Article&gt; articles) 
+        {
+            int count = 0;
+            foreach (var article in articles) 
+            {
+                if (article.IsPublished()) count++;
+            }
+            return count;
+        }
+
+        // 9. Passing a Lambda to an Extension Method
+        public static List&lt;Article&gt; Filter(this List&lt;Article&gt; articles, Predicate&lt;Article&gt; condition) 
+        {
+            return articles.FindAll(condition);
+        }
+    }
+
+    // Main Program
+    class Program 
+    {
+        static void Main(string[] args) 
+        {
+            List&lt;Article&gt; articles = new List&lt;Article&gt; {
+                new Article { Title = "C# Extension Methods Guide", Status = EnmArticleStatus.Published },
+                new Article { Title = "LINQ Basics", Status = EnmArticleStatus.Draft },
+                new Article { Title = "Advanced C# Architecture", Status = EnmArticleStatus.Published }
+            };
+
+            // 5. Calling an Extension Method
+            Article firstArticle = articles[0];
+            Console.WriteLine($"Is First Published? {firstArticle.IsPublished()}");
+            
+            // 6. Calling with additional parameter
+            Console.WriteLine($"Short Title: {firstArticle.GetShortTitle(10)}");
+
+            // 8. Calling on a collection
+            Console.WriteLine($"Total Published: {articles.CountPublished()}");
+
+            // 7. Passing lambda to extension method
+            List&lt;Article&gt; drafts = articles.Filter(article => article.Status == EnmArticleStatus.Draft);
+            Console.WriteLine($"Total Drafts Found: {drafts.Count}");
+
+            Console.ReadLine();
+        }
+    }
+}</code></pre>
+                </div>
+                <div class="console-output"><strong>Console Output:</strong><pre>Is First Published? True
+Short Title: C# Extensi...
+Total Published: 2
+Total Drafts Found: 1</pre></div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">14. Final Mental Model</h3>
+                
+                <div class="diagram-box">Extension Method
+       ↓
+static method
+       +
+static class
+       +
+this on first parameter
+       ↓
+call using dot notation</div>
+
+                <p>Example Usage:</p>
+                <pre><code class="language-csharp">article.IsPublished();</code></pre>
+
+                <p>Conceptually mapped to:</p>
+                <pre><code class="language-csharp">ArticleExtensions.IsPublished(article);</code></pre>
+
+                <div class="diagram-box">Lambda Expressions (describe behavior)
+        +
+Extension Methods (provide convenient reusable operations)
+        ↓
+Both prepare you for LINQ!</div>
+            </div>
+
+        </div>
+
+        <!-- TAB 5: PRACTICE -->
+        <div id="tab-practice" class="topic-tab-content">
+            
+            <h2>Practice & Validation</h2>
+            <p style="color:var(--text-secondary); margin-bottom: 20px;">Try answering these mentally before expanding the solution.</p>
+
+            <h3>Beginner Exercises</h3>
+            <details>
+                <summary>1. Write the method signature for an extension method named `PrintTitle` that extends the `Article` class.</summary>
+                <div><code>public static void PrintTitle(this Article article)</code></div>
+            </details>
+            <details>
+                <summary>2. You have an extension method: `public static bool IsDraft(this Article article)`. How do you call it on an object named `myArticle`?</summary>
+                <div><code>bool result = myArticle.IsDraft();</code></div>
+            </details>
+            <details>
+                <summary>3. Write an extension method signature for the `string` class named `HasVowels`.</summary>
+                <div><code>public static bool HasVowels(this string text)</code></div>
+            </details>
+            <details>
+                <summary>4. Write the method signature for an extension method named `SetStatus` that extends `Article` and takes an additional `EnmArticleStatus` parameter.</summary>
+                <div><code>public static void SetStatus(this Article article, EnmArticleStatus newStatus)</code></div>
+            </details>
+            <details>
+                <summary>5. You have an extension method: `public static void PrintAll(this List&lt;Article&gt; list)`. How do you call it on a variable named `database`?</summary>
+                <div><code>database.PrintAll();</code></div>
+            </details>
+
+            <h3 style="margin-top:30px;">Intermediate Exercises</h3>
+            <details>
+                <summary>1. Write the method signature for an extension method named `CountMatches` that extends `IEnumerable&lt;Article&gt;` and takes a `Predicate&lt;Article&gt;` parameter.</summary>
+                <div><code>public static int CountMatches(this IEnumerable&lt;Article&gt; articles, Predicate&lt;Article&gt; condition)</code></div>
+            </details>
+            <details>
+                <summary>2. Assume the `CountMatches` method from question 1 exists. Call it on a list named `articles` using a lambda expression to find articles where `ViewCount > 100`.</summary>
+                <div><code>int matches = articles.CountMatches(article => article.ViewCount > 100);</code></div>
+            </details>
+            <details>
+                <summary>3. Write a complete static class containing an extension method for `Article` named `IsPopular` that returns true if `ViewCount` is greater than 1000.</summary>
+                <div><pre><code class="language-csharp">public static class ArticleExtensions {
+    public static bool IsPopular(this Article article) {
+        return article.ViewCount > 1000;
+    }
+}</code></pre></div>
+            </details>
+
+            <h3 style="margin-top:30px;">Output Prediction</h3>
+            <details>
+                <summary>1. `public static int AddTen(this int number) { return number + 10; }` <br>What prints? `int age = 5; Console.WriteLine(age.AddTen());`</summary>
+                <div><strong>15</strong></div>
+            </details>
+            <details>
+                <summary>2. The `Article` class has a normal method `public void Print() { Console.Write("Normal"); }`. <br>An extension method exists: `public static void Print(this Article a) { Console.Write("Extension"); }`. <br>What prints? `myArticle.Print();`</summary>
+                <div><strong>Normal</strong> (Instance methods always take precedence over extension methods with the same name).</div>
+            </details>
+            <details>
+                <summary>3. `public static string Shout(this string text, bool loud) { return loud ? text.ToUpper() : text; }` <br>What prints? `Console.WriteLine("hello".Shout(true));`</summary>
+                <div><strong>HELLO</strong></div>
+            </details>
+
+            <h3 style="margin-top:30px;">Find the Error</h3>
+            <details>
+                <summary>1. <code>public bool IsValid(this Article article) { return true; }</code></summary>
+                <div><strong>Error:</strong> The method is missing the <code>static</code> keyword. Extension methods must be static.</div>
+            </details>
+            <details>
+                <summary>2. <code>public static class Extensions { public static void Print(Article article) { Console.WriteLine(article.Title); } }</code></summary>
+                <div><strong>Error:</strong> The method is missing the <code>this</code> keyword on the first parameter, making it a normal static method, not an extension method.</div>
+            </details>
+            <details>
+                <summary>3. <code>public class ArticleExtensions { public static bool IsDraft(this Article article) { return true; } }</code></summary>
+                <div><strong>Error:</strong> The containing class <code>ArticleExtensions</code> must be declared as <code>static class</code>.</div>
+            </details>
+            <details>
+                <summary>4. <code>public static void SetTitle(this Article article, this string newTitle) { ... }</code></summary>
+                <div><strong>Error:</strong> The <code>this</code> keyword can ONLY be applied to the first parameter of an extension method.</div>
+            </details>
+            <details>
+                <summary>5. <code>public static void Reset(this Article article) { article._privateCount = 0; }</code></summary>
+                <div><strong>Error:</strong> Extension methods cannot access private fields (<code>_privateCount</code>) of the class they extend.</div>
+            </details>
+
+            <h3 style="margin-top:30px;">Interview & Revision Questions</h3>
+            <details>
+                <summary>1. What is an Extension Method?</summary>
+                <div>A static method that provides special syntax allowing it to be called as if it were an instance method on an existing type.</div>
+            </details>
+            <details>
+                <summary>2. Why do Extension Methods exist?</summary>
+                <div>To allow developers to add functionality to existing types (even built-in .NET types) without needing to modify the original source code or use inheritance.</div>
+            </details>
+            <details>
+                <summary>3. Why must an Extension Method be static?</summary>
+                <div>Because it does not actually belong to an instance of the class. It is a utility method that operates on the object passed to it.</div>
+            </details>
+            <details>
+                <summary>4. Why must the containing class be static?</summary>
+                <div>C# language design requires it to ensure extension methods are grouped in utility classes that cannot be instantiated.</div>
+            </details>
+            <details>
+                <summary>5. What does the `this` keyword mean when placed on the first parameter?</summary>
+                <div>It signals to the compiler that the static method is an Extension Method, and the type following `this` is the type being extended.</div>
+            </details>
+            <details>
+                <summary>6. Under the hood, what does `article.IsPublished()` actually compile down to?</summary>
+                <div>It compiles exactly into a normal static method call: `ArticleExtensions.IsPublished(article);`</div>
+            </details>
+            <details>
+                <summary>7. What happens if you forget to include the `using` statement for the namespace containing your extension methods?</summary>
+                <div>The compiler will not be able to find the extension method, and you will get an error saying the method does not exist on the type.</div>
+            </details>
+            <details>
+                <summary>8. How do Extension Methods and Lambda Expressions relate to LINQ?</summary>
+                <div>LINQ is essentially a large collection of Extension Methods (like `.Where()` and `.Select()`) that operate on collections, and they take Lambda Expressions as parameters to define their filtering and mapping logic.</div>
+            </details>
+
+        </div>
+
+        <div class="nav-buttons">
+            <a href="13-lambda-expressions.html">&larr; Previous: Lambda Expressions</a>
+            <a href="#">Next: LINQ Fundamentals &rarr;</a>
+        </div>
+    </main>
+    
+    <script src="../../js/ui-enhancements.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('kb_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+        if(localStorage.getItem('kb_sidebar_collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+</body>
+</html>
+'''
+
+with open(filepath, 'w', encoding='utf-8') as f:
+    f.write(html_content)

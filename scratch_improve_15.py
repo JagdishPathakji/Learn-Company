@@ -1,0 +1,677 @@
+import os
+
+filepath = r'c:\Users\patha\OneDrive\Desktop\knowledge-base\website\topics\csharp\15-linq.html'
+
+html_content = r'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>C# LINQ (Language Integrated Query)</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        .concept-block { background: var(--bg-surface); padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-left: 4px solid var(--accent); color: var(--text-primary); line-height: 1.7; }
+        .concept-title { color: var(--accent); font-size: 1.5rem; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-weight: 700; }
+        
+        .mistake-box { background: var(--callout-danger-bg); border-left: 4px solid var(--callout-danger-border); padding: 15px; margin-top: 15px; border-radius: 4px; color: var(--text-primary); line-height: 1.6; }
+        .mistake-title { color: var(--callout-danger-border); font-weight: bold; margin-bottom: 5px; display: block; }
+        
+        .advanced-box { background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8b5cf6; padding: 15px; margin-top: 15px; border-radius: 4px; color: #ddd6fe; line-height: 1.6; }
+        .advanced-title { color: #c4b5fd; font-weight: bold; margin-bottom: 5px; display: block; }
+        
+        .evolution-step { background: var(--bg-main); padding: 15px; margin-bottom: 15px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); line-height: 1.6; }
+        .evolution-step h4 { margin-top: 0; color: #10b981; font-size: 1.2rem; margin-bottom: 10px; }
+
+        details { background: var(--border-color); padding: 10px 15px; border-radius: 4px; margin-bottom: 10px; cursor: pointer; }
+        summary { font-weight: bold; color: var(--text-primary); outline: none; }
+        details > div { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--bg-surface); color: var(--text-secondary); cursor: text; line-height: 1.6; }
+        
+        .diagram-box { background: var(--bg-main); padding: 20px; border-radius: 6px; font-family: monospace; color: var(--accent); margin: 15px 0; border: 1px solid var(--border-color); white-space: pre; overflow-x: auto; font-size: 0.95rem; line-height: 1.4; }
+        
+        table.linq-table { width: 100%; border-collapse: collapse; margin-top: 15px; color: #e2e8f0; font-size: 0.9rem; }
+        table.linq-table th, table.linq-table td { padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        table.linq-table th { background: var(--bg-main); color: var(--accent); }
+    </style>
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="sidebar-category">C# Training</div>
+        <ul>
+            <li><a href="01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+            <li><a href="02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+            <li><a href="13-lambda-expressions.html">13. Lambda Expressions</a></li>
+            <li><a href="14-extension-methods.html">14. Extension Methods</a></li>
+            <li><a href="15-linq.html" class="active">15. LINQ</a></li>
+        </ul>
+    </aside>
+    
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>LINQ (Language Integrated Query)</h1>
+            <p class="metadata">Difficulty: Intermediate | Category: C# Data Processing</p>
+        </div>
+
+        <div class="callout callout-info">
+            <span class="callout-title">The Power of "What", Not "How"</span>
+            <p>You know Lambda Expressions (how to pass logic) and Extension Methods (how to call it elegantly). Now, you will combine them to master <strong>LINQ</strong>. By the end of this module, you will be able to slice, filter, group, and query massive amounts of data with readable code.</p>
+        </div>
+
+        <div class="topic-tabs">
+            <button class="topic-tab-btn active" onclick="switchTopicTab('tab-fundamentals')">1. Fundamentals</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-operators')">2. Operators</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-architecture')">3. Architecture</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-demo')">4. Demo & Mistakes</button>
+            <button class="topic-tab-btn" onclick="switchTopicTab('tab-practice')">5. Practice & Maps</button>
+        </div>
+
+        <!-- TAB 1: FUNDAMENTALS -->
+        <div id="tab-fundamentals" class="topic-tab-content active">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">1. The Problem LINQ Solves</h3>
+                <p>Imagine we have a <code>List&lt;Article&gt;</code> and we want to find all published articles.</p>
+                
+                <div class="evolution-step">
+                    <h4>Before LINQ (The "How" approach)</h4>
+                    <p>We have to manually write the looping and filtering logic, telling the computer <em>how</em> to do the work step-by-step.</p>
+                    <pre><code class="language-csharp">List&lt;Article&gt; publishedArticles = new List&lt;Article&gt;();
+foreach (Article article in articles)
+{
+    if (article.Status == EnmArticleStatus.Published)
+    {
+        publishedArticles.Add(article);
+    }
+}</code></pre>
+                </div>
+
+                <div class="evolution-step">
+                    <h4>With LINQ (The "What" approach)</h4>
+                    <p>LINQ allows us to describe <em>what</em> data we want, instead of manually writing the looping and filtering logic every time.</p>
+                    <pre><code class="language-csharp">List&lt;Article&gt; publishedArticles = articles
+    .Where(article => article.Status == EnmArticleStatus.Published)
+    .ToList();</code></pre>
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">2. What Is LINQ?</h3>
+                <p><strong>Language Integrated Query</strong> provides a consistent way to work with data.</p>
+                <ul>
+                    <li><strong>Language Integrated:</strong> The query syntax is built directly into C#. You get autocomplete, compile-time checking, and refactoring support.</li>
+                    <li><strong>Query:</strong> A request for data (filtering, transforming, sorting).</li>
+                </ul>
+                <p>There are two primary families of LINQ:</p>
+                <div class="diagram-box">Enumerable
+    ↓
+IEnumerable&lt;T&gt;
+    ↓
+LINQ to Objects (executes in-memory over Lists, Arrays, etc.)
+
+Queryable
+    ↓
+IQueryable&lt;T&gt;
+    ↓
+LINQ providers such as EF Core (executes queries on a database)</div>
+                <p>Both families share the same mental model: Data → Operators → Result.</p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">3. The Foundation: LINQ, Lambdas, and Extension Methods</h3>
+                <p>Look at the statement below. It relies entirely on the two previous modules you learned.</p>
+                
+                <div class="diagram-box">articles
+   ↓
+extension method
+   ↓
+Where(...)
+   ↓
+lambda expression
+   ↓
+condition applied to articles</div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">4. Where() — Filtering</h3>
+                <div class="diagram-box">IEnumerable&lt;Article&gt; (Input)
+     ↓
+Where(article => article.Status == EnmArticleStatus.Published)
+     ↓
+IEnumerable&lt;Article&gt; (Output)</div>
+                
+                <p><strong>What it does:</strong> Filters a sequence based on a true/false condition.<br>
+                <strong>The Lambda:</strong> Accepts a <code>Func&lt;TSource, bool&gt;</code>. Because `Func<T, bool>` represents a method that takes a T and returns a boolean, a lambda like <code>article => article.Status == EnmArticleStatus.Published</code> perfectly matches this signature.</p>
+                
+                <pre><code class="language-csharp">// Single condition
+var drafts = articles.Where(a => a.Status == EnmArticleStatus.Draft);
+
+// Multiple conditions using && and ||
+var popularPublished = articles.Where(a => 
+    a.Status == EnmArticleStatus.Published && 
+    a.ViewCount > 1000);</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">5. Select() — Projection</h3>
+                <p>Projection is one of the most important LINQ concepts. It means transforming the shape of the data.</p>
+
+                <div class="diagram-box">IEnumerable&lt;Article&gt; (Input)
+     ↓
+Select(article => article.Title)
+     ↓
+IEnumerable&lt;string&gt; (Output)</div>
+
+                <p><strong>What it does:</strong> Decides WHAT each item becomes. Notice the output type changes!<br>
+                <strong>The Lambda:</strong> Accepts a <code>Func&lt;TSource, TResult&gt;</code>.</p>
+
+                <pre><code class="language-csharp">// Extracting a single property (Article -> string)
+var titles = articles.Select(a => a.Title);
+
+// Projecting into a new Anonymous Object (Article -> AnonymousType)
+var summaries = articles.Select(a => new {
+    a.Id,
+    a.Title,
+    a.ViewCount
+});</code></pre>
+
+                <div class="advanced-box">
+                    <strong>Crucial Distinction:</strong><br>
+                    <code>Where()</code> decides WHICH items remain.<br>
+                    <code>Select()</code> decides WHAT each item becomes.
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">6. Filtering + Projection (Chaining)</h3>
+                <p>Because these methods operate on and return sequences, you can chain them.</p>
+                
+                <pre><code class="language-csharp">var publishedTitles = articles
+    .Where(article => article.Status == EnmArticleStatus.Published)
+    .Select(article => article.Title)
+    .ToList();</code></pre>
+
+                <div class="diagram-box">All Articles (List&lt;Article&gt;)
+    ↓ Where
+Published Articles (IEnumerable&lt;Article&gt;)
+    ↓ Select
+Article Titles (IEnumerable&lt;string&gt;)
+    ↓ ToList
+List&lt;string&gt;</div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: OPERATORS -->
+        <div id="tab-operators" class="topic-tab-content">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">7. Sorting</h3>
+                <pre><code class="language-csharp">// Primary Sort
+var sorted = articles.OrderBy(a => a.Title);
+var sortedDesc = articles.OrderByDescending(a => a.ViewCount);
+
+// Secondary Sort (Use ThenBy)
+var multiSorted = articles
+    .OrderBy(a => a.Status)
+    .ThenBy(a => a.Title);</code></pre>
+                
+                <div class="mistake-box">
+                    <span class="mistake-title">OrderBy vs ThenBy</span>
+                    If you want a secondary ordering, use <code>ThenBy()</code>. A second <code>OrderBy()</code> establishes another primary ordering rather than expressing a secondary sort, effectively overwriting your first sort.
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">8. Element Operators</h3>
+                <p>These extract a specific item from a sequence.</p>
+
+                <table class="linq-table">
+                    <tr>
+                        <th>Method</th>
+                        <th>If Sequence is Empty / No Match</th>
+                        <th>If Multiple Matches Exist</th>
+                    </tr>
+                    <tr>
+                        <td><code>First()</code></td>
+                        <td style="color:#ef4444;">Throws Exception</td>
+                        <td>Returns first item</td>
+                    </tr>
+                    <tr>
+                        <td><code>FirstOrDefault()</code></td>
+                        <td>Returns default value (e.g., <code>null</code> for objects, <code>0</code> for ints)</td>
+                        <td>Returns first item</td>
+                    </tr>
+                    <tr>
+                        <td><code>Single()</code></td>
+                        <td style="color:#ef4444;">Throws Exception</td>
+                        <td style="color:#ef4444;">Throws Exception</td>
+                    </tr>
+                    <tr>
+                        <td><code>SingleOrDefault()</code></td>
+                        <td>Returns default value</td>
+                        <td style="color:#ef4444;">Throws Exception</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">9. Any() and All()</h3>
+                <pre><code class="language-csharp">// True if AT LEAST ONE draft exists
+bool hasDrafts = articles.Any(a => a.Status == EnmArticleStatus.Draft);
+
+// True if EVERY article has views >= 0
+bool allValid = articles.All(a => a.ViewCount >= 0);</code></pre>
+                <p><em>Note: <code>All()</code> returns true on an empty sequence, while <code>Any()</code> returns false.</em></p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">10. Aggregation</h3>
+                <pre><code class="language-csharp">int totalArticles = articles.Count();
+int totalViews = articles.Sum(a => a.ViewCount);
+double avgViews = articles.Average(a => a.ViewCount);
+int mostViews = articles.Max(a => a.ViewCount);
+int leastViews = articles.Min(a => a.ViewCount);</code></pre>
+                <p><em>Warning: Calling Average, Min, or Max on an empty sequence will throw an exception unless the type is nullable.</em></p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">11. Pagination & Partitioning</h3>
+                <div class="diagram-box">Skip(10) → Ignore first 10 items
+Take(10) → Take the next 10 items and stop</div>
+                
+                <pre><code class="language-csharp">// Get Page 2 (assuming 10 items per page)
+var page2 = articles
+    .OrderBy(a => a.Title) // ALWAYS order before pagination!
+    .Skip(10)
+    .Take(10)
+    .ToList();
+
+// Partition conditionally
+var upToFirstDraft = articles.TakeWhile(a => a.Status == EnmArticleStatus.Published);
+var skipUntilDraft = articles.SkipWhile(a => a.Status == EnmArticleStatus.Published);</code></pre>
+            </div>
+            
+            <div class="concept-block">
+                <h3 class="concept-title">12. Sequence & Equality</h3>
+                <pre><code class="language-csharp">// Contains: Checks if an item exists based on equality
+bool hasId101 = authorIds.Contains(101);
+
+// SequenceEqual: Checks if two sequences have the same elements in the exact same order
+bool match = list1.SequenceEqual(list2);</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">13. GroupBy() and ToLookup()</h3>
+                <p><code>GroupBy</code> partitions your data into chunks based on a key (deferred). <code>ToLookup</code> does the same, but immediately materializes into a lookup structure.</p>
+                
+                <div class="diagram-box">Articles
+   ↓
+GroupBy(article => article.Status)
+   ↓
+Group 1 (Key: Draft) -> [Article1, Article4]
+Group 2 (Key: Published) -> [Article2, Article3]</div>
+
+                <pre><code class="language-csharp">// Common Pattern: Grouping and projecting into a summary
+var articleCounts = articles
+    .GroupBy(article => article.Status)
+    .Select(group => new
+    {
+        Status = group.Key, // The property we grouped by
+        Count = group.Count() // The group itself acts as an IEnumerable of articles
+    })
+    .ToList();
+
+// ToLookup (Immediate materialization)
+var articlesByAuthor = articles.ToLookup(a => a.AuthorId);
+var bobArticles = articlesByAuthor[2]; // Fast retrieval of AuthorId 2's articles</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">14. Joining Data</h3>
+                <p>LINQ can join two sequences together based on matching keys.</p>
+
+                <pre><code class="language-csharp">// Inner Join
+var articleAuthors = articles.Join(
+    users, // sequence to join
+    article => article.AuthorId, // key from articles
+    user => user.Id, // key from users
+    (article, user) => new { article.Title, user.Name }); // projection
+
+// GroupJoin (Left Join Concept)
+// Groups all articles belonging to each user. If a user has no articles, 
+// the user is still included, but their 'userArticles' collection is empty.
+var usersWithArticles = users.GroupJoin(
+    articles,
+    user => user.Id,
+    article => article.AuthorId,
+    (user, userArticles) => new { 
+        user.Name, 
+        Articles = userArticles.DefaultIfEmpty() // Ensures empty collections are handled
+    });</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">15. SelectMany() — Flattening</h3>
+                <p>If an <code>Article</code> contains a <code>List&lt;Tag&gt;</code>, <code>Select</code> gives you a list of lists. <code>SelectMany</code> flattens them into a single list.</p>
+
+                <div class="diagram-box">Select
+→ collection of collections
+
+SelectMany
+→ flattened collection</div>
+
+                <pre><code class="language-csharp">// Gets all tags from all articles, flattened into one big list, removing duplicates
+var allTags = articles
+    .SelectMany(article => article.Tags)
+    .Distinct()
+    .ToList();</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">16. Combining Sequences & Sets</h3>
+                <p><code>Distinct()</code> uses equality comparison to determine whether two elements are equal. For custom objects, the result depends on the equality implementation being used (if value-based equality isn't defined, separate objects with identical property values are treated as different objects).</p>
+                <pre><code class="language-csharp">var noDuplicates = list1.Distinct();
+var allCombined = list1.Concat(list2); // Keeps duplicates
+var uniqueCombined = list1.Union(list2); // Removes duplicates
+var commonOnly = list1.Intersect(list2);
+var difference = list1.Except(list2);
+
+var addedToEnd = articles.Append(newArticle);
+var addedToStart = articles.Prepend(newArticle);</code></pre>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: ARCHITECTURE -->
+        <div id="tab-architecture" class="topic-tab-content">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">17. Deferred Execution</h3>
+                <p>Most LINQ operators (like <code>Where</code>, <code>Select</code>, <code>OrderBy</code>) <strong>do not execute immediately</strong>. They merely build a set of instructions. The query only actually runs when you iterate over it (e.g., in a <code>foreach</code> loop). Deferred execution does not mean "nothing happens internally", it means the operation waits until enumeration occurs.</p>
+
+                <div class="diagram-box">Create query: var query = articles.Where(...)
+     ↓
+No enumeration yet
+     ↓
+Change source: articles.Add(new Article(...))
+     ↓
+Enumerate query: foreach(var a in query)
+     ↓
+Current source data is observed! The new article IS included!</div>
+
+                <p>Note: Different operators have different internal behaviors upon enumeration. For example, <code>OrderBy()</code> must obtain all the elements needed to produce sorted results before yielding the first item.</p>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">18. Immediate vs Deferred Execution</h3>
+                <table class="linq-table">
+                    <tr><th>Deferred Operators (Wait to run)</th><th>Immediate/Terminal Operators (Run now)</th></tr>
+                    <tr><td><code>Where</code>, <code>Select</code>, <code>OrderBy</code>, <code>GroupBy</code>, <code>Skip</code>, <code>Take</code>, <code>SelectMany</code></td><td><code>ToList</code>, <code>ToArray</code>, <code>Count</code>, <code>First</code>, <code>Any</code>, <code>Max</code></td></tr>
+                </table>
+
+                <div class="mistake-box">
+                    <span class="mistake-title">Multiple Enumeration</span>
+                    <p>If you have a deferred query and you do: <br><code>int count = query.Count();</code><br><code>Article first = query.First();</code><br>The query is <strong>enumerated separately</strong> twice. <code>Count()</code> generally needs to inspect all matching elements, while <code>First()</code> can stop early. Still, if the query is expensive, hitting the database, or doing heavy math, you want to avoid enumerating it twice.</p>
+                </div>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">19. Materialization (Executing the Query)</h3>
+                <p>Usually, you want to delay materialization until you actually need it. However, materializing earlier using <code>ToList()</code> or <code>ToArray()</code> can be intentional when you need a snapshot, need a concrete collection to mutate, or want to avoid repeated enumeration.</p>
+                
+                <pre><code class="language-csharp">var query = articles.Where(a => a.Status == EnmArticleStatus.Published);
+
+// Materializes the query ONCE into memory
+List&lt;Article&gt; snapshot = query.ToList(); 
+
+int count = snapshot.Count; // fast
+Article first = snapshot.First(); // fast</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">20. Query Syntax vs Method Syntax</h3>
+                <p>Everything you've learned so far is <strong>Method Syntax</strong>. LINQ also offers <strong>Query Syntax</strong>, which is translated into method-call-based LINQ operations behind the scenes.</p>
+                
+                <pre><code class="language-csharp">// Method Syntax
+var published = articles
+    .Where(a => a.Status == EnmArticleStatus.Published)
+    .OrderByDescending(a => a.ViewCount)
+    .Select(a => a.Title);
+
+// Query Syntax (Equivalent in behavior to the method syntax above)
+var published = from a in articles
+                where a.Status == EnmArticleStatus.Published
+                orderby a.ViewCount descending
+                select a.Title;</code></pre>
+            </div>
+
+            <div class="concept-block">
+                <h3 class="concept-title">21. IEnumerable&lt;T&gt; vs IQueryable&lt;T&gt;</h3>
+                <p>This is the secret to how LINQ connects to databases.</p>
+
+                <div class="diagram-box">IEnumerable
+    ↓
+C# code operates over objects/data in memory.
+Delegates are compiled executable code.
+
+IQueryable
+    ↓
+Expression Tree describing a query.
+    ↓
+Provider may translate it.
+    ↓
+External data source (e.g. SQL Database).</div>
+
+                <p>With EF Core, LINQ operations that the provider can translate are normally converted into SQL and executed by the database, allowing filtering/projection to happen in the database instead of first loading all rows into application memory. <em>(Note: Not every arbitrary C# expression can necessarily be translated by every provider).</em></p>
+                
+                <div class="advanced-box">
+                    <span class="advanced-title">Expression Trees Conceptually</span>
+                    A Delegate is executable code. An <code>Expression&lt;Func&lt;T, bool&gt;&gt;</code> is a data structure (a tree) that <em>describes</em> code. A database provider inspects the tree (e.g., "Ah, they want Property 'Status' == 'Published'") and converts that description into a SQL <code>WHERE</code> clause.
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: DEMO & MISTAKES -->
+        <div id="tab-demo" class="topic-tab-content">
+
+            <div class="concept-block">
+                <h3 class="concept-title">22. Practical Mistakes & Performance Guidance</h3>
+                
+                <details><summary>1. Confusing Where() and Select()</summary><div><code>Where</code> filters rows. <code>Select</code> shapes columns. Don't try to change the object shape inside a <code>Where</code> clause.</div></details>
+                <details><summary>2. Calling First() when empty</summary><div>If a list might be empty, use <code>FirstOrDefault()</code>, then check if the result is default.</div></details>
+                <details><summary>3. Using Single() when multiple items exist</summary><div><code>Single</code> asserts EXACTLY ONE item matches. If two match, it throws. Use <code>First()</code> if you just want the first one.</div></details>
+                <details><summary>4. Confusing Count() with Any()</summary><div><strong>Need the number?</strong> → <code>Count()</code><br><strong>Only need to know whether something exists?</strong> → <code>Any()</code> (Any communicates intent better and can stop as soon as it finds a match).</div></details>
+                <details><summary>5. Calling ToList() too early</summary><div><code>dbContext.Articles.ToList().Where(...)</code>. The <code>ToList()</code> materializes the massive table into application memory BEFORE filtering. Put <code>ToList()</code> at the end.</div></details>
+                <details><summary>6. Skip/Take without OrderBy</summary><div>Databases do not guarantee order. Always apply deterministic ordering before pagination for stable results.</div></details>
+                <details><summary>7. Forgetting FirstOrDefault() can return null</summary><div>Blindly chaining off it like <code>articles.FirstOrDefault(x).Title</code> will throw a NullReferenceException if the item isn't found.</div></details>
+                <details><summary>8. Modifying a collection while enumerating it</summary><div>You cannot add/remove items from a List inside a foreach loop enumerating that same list. Materialize a snapshot first if you must.</div></details>
+            </div>
+            
+            <div class="concept-block">
+                <h3 class="concept-title">23. Complete Knowledge Base LINQ Demo</h3>
+                <p>A full program combining the vast majority of LINQ operators into practical queries.</p>
+                
+                <div class="code-container" style="border-radius: 6px 6px 0 0;">
+                    <div class="code-header"><span>C# - Program.cs</span><button class="copy-btn">Copy</button></div>
+                    <pre><code class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace KnowledgeBase 
+{
+    public enum EnmArticleStatus { Draft, Published }
+
+    public class User { public int Id { get; set; } public string Name { get; set; } }
+
+    public class Article 
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public int AuthorId { get; set; }
+        public EnmArticleStatus Status { get; set; }
+        public int ViewCount { get; set; }
+        public List&lt;string&gt; Tags { get; set; } = new List&lt;string&gt;();
+    }
+
+    class Program 
+    {
+        static void Main() 
+        {
+            var users = new List&lt;User&gt; {
+                new User { Id = 1, Name = "Alice" },
+                new User { Id = 2, Name = "Bob" }
+            };
+
+            var articles = new List&lt;Article&gt; {
+                new Article { Id = 10, Title = "C# Basics", AuthorId = 1, Status = EnmArticleStatus.Published, ViewCount = 500, Tags = new List&lt;string&gt;{"C#", "Beginner"} },
+                new Article { Id = 11, Title = "LINQ Guide", AuthorId = 1, Status = EnmArticleStatus.Draft, ViewCount = 0, Tags = new List&lt;string&gt;{"C#", "LINQ"} },
+                new Article { Id = 12, Title = "SQL Tips", AuthorId = 2, Status = EnmArticleStatus.Published, ViewCount = 1200, Tags = new List&lt;string&gt;{"SQL"} }
+            };
+
+            // 1. Where, OrderByDescending, ThenBy, Select, ToList (Chaining)
+            var report = articles
+                .Where(a => a.Status == EnmArticleStatus.Published)
+                .OrderByDescending(a => a.ViewCount)
+                .ThenBy(a => a.Title)
+                .Select(a => new { a.Title, a.ViewCount })
+                .ToList();
+
+            // 2. SelectMany, Distinct, Concat
+            var extraTags = new List&lt;string&gt; { "Advanced", "C#" };
+            var allUniqueTags = articles
+                .SelectMany(a => a.Tags)
+                .Concat(extraTags)
+                .Distinct()
+                .ToList();
+
+            // 3. Aggregation (Count, Max, Average, Any, All)
+            bool hasPublished = articles.Any(a => a.Status == EnmArticleStatus.Published);
+            int totalDrafts = articles.Count(a => a.Status == EnmArticleStatus.Draft);
+            int maxViews = articles.Max(a => a.ViewCount);
+            
+            // 4. GroupBy vs ToLookup
+            var groupedByStatus = articles
+                .GroupBy(a => a.Status)
+                .Select(g => new { Status = g.Key, AvgViews = g.Average(a => a.ViewCount) })
+                .ToList();
+
+            var lookupByAuthor = articles.ToLookup(a => a.AuthorId);
+
+            // 5. Join (Inner) & GroupJoin (Left Concept)
+            var articleAuthors = articles.Join(
+                users, a => a.AuthorId, u => u.Id,
+                (a, u) => $"{a.Title} by {u.Name}"
+            ).ToList();
+
+            // 6. Pagination & FirstOrDefault
+            var firstPage = articles.OrderBy(a => a.Id).Skip(0).Take(2).ToList();
+            var missing = articles.FirstOrDefault(a => a.Id == 999); // Returns null
+
+            // Output Results
+            Console.WriteLine($"Has Published: {hasPublished}, Drafts: {totalDrafts}, Max Views: {maxViews}");
+            Console.WriteLine($"\nTags: {string.Join(", ", allUniqueTags)}");
+            Console.WriteLine("\n--- Grouped By Status ---");
+            groupedByStatus.ForEach(g => Console.WriteLine($"{g.Status}: {g.AvgViews} avg views"));
+            Console.WriteLine("\n--- Join Result ---");
+            articleAuthors.ForEach(Console.WriteLine);
+            
+            Console.ReadLine();
+        }
+    }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: PRACTICE & MAPS -->
+        <div id="tab-practice" class="topic-tab-content">
+            
+            <div class="concept-block">
+                <h3 class="concept-title">LINQ Operator Map (Mental Model)</h3>
+                <div class="diagram-box">Where            → Which items?
+Select           → What should each item become?
+SelectMany       → Flatten nested collections
+OrderBy / ThenBy → How should items be sorted?
+GroupBy          → How should items be grouped?
+Join             → Which items from two sequences match?
+Any              → Does at least one exist?
+All              → Do all satisfy the condition?
+First            → Give me the first
+Single           → There must be exactly one
+Skip / Take      → Which portion?
+Distinct         → Remove duplicates
+Aggregate        → Calculate a result (Count, Sum, Min, Max, Average)
+ToList / ToArray / ToDictionary / ToHashSet
+                 → Materialize the sequence</div>
+            </div>
+
+            <h2>Practice & Validation</h2>
+
+            <h3>Beginner (Write the LINQ)</h3>
+            <details><summary>1. Get all articles with a ViewCount > 100.</summary><div><code>articles.Where(a => a.ViewCount > 100)</code></div></details>
+            <details><summary>2. Extract just the IDs from a list of articles.</summary><div><code>articles.Select(a => a.Id)</code></div></details>
+            <details><summary>3. Sort articles alphabetically by Title.</summary><div><code>articles.OrderBy(a => a.Title)</code></div></details>
+            <details><summary>4. Check if ANY article is in Draft status.</summary><div><code>articles.Any(a => a.Status == EnmArticleStatus.Draft)</code></div></details>
+            <details><summary>5. Get the total number of articles.</summary><div><code>articles.Count()</code></div></details>
+            <details><summary>6. Get the first article, or default if none exist.</summary><div><code>articles.FirstOrDefault()</code></div></details>
+            <details><summary>7. Get a list of unique AuthorIds.</summary><div><code>articles.Select(a => a.AuthorId).Distinct()</code></div></details>
+            <details><summary>8. Skip the first 5 articles.</summary><div><code>articles.Skip(5)</code></div></details>
+            <details><summary>9. Take only 3 articles.</summary><div><code>articles.Take(3)</code></div></details>
+            <details><summary>10. Combine Skip and Take for page 3 (10 per page).</summary><div><code>articles.Skip(20).Take(10)</code></div></details>
+
+            <h3 style="margin-top:30px;">Intermediate</h3>
+            <details><summary>1. Get the Titles of all Published articles, sorted by Title.</summary><div><code>articles.Where(a => a.Status == EnmArticleStatus.Published).OrderBy(a => a.Title).Select(a => a.Title)</code></div></details>
+            <details><summary>2. Group articles by Status.</summary><div><code>articles.GroupBy(a => a.Status)</code></div></details>
+            <details><summary>3. Create a Dictionary where the Key is the Article Id and the Value is the Article.</summary><div><code>articles.ToDictionary(a => a.Id)</code></div></details>
+            <details><summary>4. Convert this method syntax to query syntax: `articles.Where(a => a.Id == 1).Select(a => a.Title)`</summary><div><code>from a in articles where a.Id == 1 select a.Title</code></div></details>
+            <details><summary>5. Get a single list of every tag used by Author 1.</summary><div><code>articles.Where(a => a.AuthorId == 1).SelectMany(a => a.Tags).Distinct()</code></div></details>
+
+            <h3 style="margin-top:30px;">Output Prediction</h3>
+            <details><summary>1. `articles.Where(a => false).Count()`</summary><div>0</div></details>
+            <details><summary>2. `articles.Where(a => false).First()`</summary><div>Exception (InvalidOperationException)</div></details>
+            <details><summary>3. `articles.Where(a => false).FirstOrDefault()`</summary><div>`null` (default for a reference type like Article)</div></details>
+            <details><summary>4. `articles.Take(5).Skip(2).Count()` (Assuming 10 articles exist)</summary><div>3 (Takes the first 5, then skips the first 2 of those 5)</div></details>
+
+            <h3 style="margin-top:30px;">Find the Error</h3>
+            <details><summary>1. `var first = articles.First(a => a.Id == -99);` (Assume no such ID exists)</summary><div><strong>Error:</strong> `First()` throws an exception if no item matches. Use `FirstOrDefault()` if a miss is expected.</div></details>
+            <details><summary>2. `var titles = articles.Select(a => a.Title).Where(a => a.ViewCount > 10);`</summary><div><strong>Error:</strong> Once you `Select(a => a.Title)`, the sequence becomes strings. Strings don't have a `ViewCount`. You must `Where` BEFORE you `Select`.</div></details>
+            <details><summary>3. `articles.OrderBy(a => a.Status).OrderBy(a => a.Title)`</summary><div><strong>Error:</strong> The second `OrderBy` establishes a new primary sort, destroying the first. Use `.ThenBy(a => a.Title)`.</div></details>
+            <details><summary>4. `var page = articles.Skip(10).Take(10).ToList();`</summary><div><strong>Error:</strong> Pagination without `OrderBy` is dangerous. The data order is not guaranteed. Always `OrderBy` first.</div></details>
+            <details><summary>5. `var dict = articles.ToDictionary(a => a.AuthorId);`</summary><div><strong>Error:</strong> If multiple articles have the same AuthorId, this throws an exception because Dictionary keys must be unique. `ToLookup` is better here.</div></details>
+
+            <h3 style="margin-top:30px;">Interview Questions</h3>
+            <details><summary>1. What is the difference between IEnumerable and IQueryable?</summary><div>IEnumerable represents an in-memory sequence of data, executing LINQ delegates via C#. IQueryable represents a query expression tree, typically translated by a provider (like Entity Framework) into SQL to run on a database.</div></details>
+            <details><summary>2. What is Deferred Execution?</summary><div>The concept where building a LINQ query does not actually execute it or fetch data. The query only executes when it is enumerated (e.g., via foreach or ToList).</div></details>
+            <details><summary>3. Explain FirstOrDefault() vs SingleOrDefault().</summary><div>Both return default (null) if no match is found. However, `FirstOrDefault()` simply returns the first match if there are multiple. `SingleOrDefault()` enforces uniqueness; if multiple matches exist, it throws an exception.</div></details>
+            <details><summary>4. How does Distinct() determine if objects are equal?</summary><div>Distinct uses equality comparison. For primitive types it compares values. For custom objects, if value-based equality isn't defined, separate objects with identical property values are treated as different objects based on reference equality.</div></details>
+            <details><summary>5. When should you use Any() instead of Count() &gt; 0?</summary><div>When you only need to know whether something exists. `Any()` can often stop as soon as it finds a matching element, whereas `Count()` may need to iterate the entire collection. `Any()` also communicates intent more clearly.</div></details>
+
+        </div>
+
+        <div class="nav-buttons">
+            <a href="14-extension-methods.html">&larr; Previous: Extension Methods</a>
+            <a href="#">Next: Databases & ORM &rarr;</a>
+        </div>
+    </main>
+    
+    <script src="../../js/ui-enhancements.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('kb_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+        if(localStorage.getItem('kb_sidebar_collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+</body>
+</html>
+'''
+
+with open(filepath, 'w', encoding='utf-8') as f:
+    f.write(html_content)
