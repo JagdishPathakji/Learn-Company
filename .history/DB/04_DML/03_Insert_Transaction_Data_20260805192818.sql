@@ -1,2 +1,0 @@
-USE knowledge_base;
-

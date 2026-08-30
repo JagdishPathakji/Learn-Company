@@ -1,1 +1,0 @@
-What it is: The word "Upsert" is a mashup of UPdate and inSERT. It tells the database: "Try to INSERT this row. If the row already exists (based on a Primary Key or Unique Constraint), don't crash! Just UPDATE it instead."
