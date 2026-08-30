@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Date, String, and Math</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <style>
+        .arch-diagram { display: flex; flex-direction: column; gap: 20px; background: #1e293b; padding: 40px; border-radius: 8px; margin: 30px 0; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .arch-phase { border: 2px dashed #64748b; padding: 25px; border-radius: 8px; background: #0f172a; position: relative; }
+        .arch-phase-title { font-size: 1.2rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .step-row { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+        .box-concept { background: #3b82f6; padding: 15px 25px; border-radius: 6px; font-weight: 600; min-width: 200px; text-align: center; }
+        .box-alert { background: #ea580c; padding: 15px 25px; border-radius: 6px; font-weight: 600; min-width: 200px; text-align: center; color: white; }
+        .arrow-down { color: #94a3b8; font-size: 24px; text-align: center; margin: 10px 0; width: 200px; }
+        .concept-definition { background: #f1f5f9; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 20px; border-radius: 0 4px 4px 0; color: #0f172a; }
+        .concept-definition strong { color: #1d4ed8; font-size: 1.1rem; display: block; margin-bottom: 5px; }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="sidebar-category">C# Training</div>
+        <ul>
+            <li><a href="01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+            <li><a href="02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+            <li><a href="03-csharp-dotnet-history.html">3. C# Fundamentals - Intro</a></li>
+            <li><a href="04-scope-and-accessibility.html">4. Scope & Accessibility</a></li>
+            <li><a href="05-namespace-and-libraries.html">5. Namespace & Libraries</a></li>
+            <li><a href="06-enumerations.html">6. Enumerations (Enums)</a></li>
+            <li><a href="07-datatable.html">7. DataTable</a></li>
+            <li><a href="08-date-string-math.html" class="active">8. Date/String/Math</a></li>
+            <li><a href="09-file-operations.html">9. File Operations</a></li>
+            <li><a href="10-advanced-types.html">10. Types (AEIP)</a></li>
+            <li><a href="11-generics.html">11. Generics</a></li>
+            <li><a href="12-file-system.html">12. File System</a></li>
+            <li><a href="13-lambda-expressions.html">13. Lambda Expressions</a></li>
+            <li><a href="14-extension-methods.html">14. Extension Methods</a></li>
+            <li><a href="15-linq.html">15. LINQ</a></li>
+        </ul>
+        <div class="sidebar-category">Deep Dives (Custom)</div>
+        <ul>
+            <li><a href="custom-01-top-level-statements.html">Top-Level Statements vs Main</a></li>
+        </ul>
+    </aside>
+    
+    
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>Date, String, and Math (The Core Toolkit)</h1>
+            <p class="metadata">Difficulty: Beginner | Category: C# Base Libraries</p>
+        </div>
+
+        <div class="callout callout-info">
+            <span class="callout-title">Mental Model</span>
+            <p>Think of <code>DateTime</code>, <code>string</code>, and <code>Math</code> as your core utility belt. You never write your own logic to calculate the square root of a number, figure out how many days are in a leap year, or change a word to uppercase. Microsoft has already written millions of lines of highly-optimized code to do this for you. Your job is simply to know which tool to pull from the belt.</p>
+        </div>
+
+        <h2>A. Why Does This Exist?</h2>
+        <p>Before standard libraries existed, developers had to manually write code to handle basic things like finding the absolute value of a number, extracting words from sentences, or formatting a date for a database. C# provides robust, globally-tested classes packed with dozens of functions for these exact operations so you can focus on your business logic.</p>
+
+        <h3>COMPLETE EXAMPLE 1: Comprehensive String Manipulation</h3>
+        <p>Strings in C# are <strong>Immutable</strong>. This means when you call a string function, it does not change the original string variable; it returns a completely <em>new</em> string. Let's look at the most heavily used string functions in enterprise applications.</p>
+        
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - String Utilities</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+
+namespace KnowledgeBase.Core
+{
+    /// &lt;summary&gt;
+    /// Demonstrates the most critical string functions used in daily programming.
+    /// &lt;/summary&gt;
+    public class StringHelper
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// Formats and analyzes raw user input.
+        /// &lt;/summary&gt;
+        public void ProcessUserInput()
+        {
+            string rawEmail = "   John.Doe@Company.com   ";
+            string bio = "Senior C# Developer";
+            
+            // 1. Cleaning & Formatting
+            string cleanEmail = rawEmail.Trim(); // Removes edge spaces
+            string lowerEmail = cleanEmail.ToLower(); // "john.doe@company.com"
+            
+            // 2. Searching & Validation
+            bool hasDomain = lowerEmail.Contains("@company.com");
+            bool startsWithJohn = lowerEmail.StartsWith("john");
+            
+            // 3. Null Checking (CRITICAL for databases)
+            // Checks if a string is null, "", or just "    "
+            bool isBioEmpty = string.IsNullOrWhiteSpace(bio); 
+            
+            // 4. Extraction (Substring)
+            // Start at index 7, grab 2 characters
+            string language = bio.Substring(7, 2); // "C#"
+            
+            // 5. String Interpolation (The $ sign)
+            // The modern way to combine strings and variables effortlessly
+            string profileCard = $"User {lowerEmail} codes in {language}.";
+
+            Console.WriteLine("Cleaned Email: " + lowerEmail);
+            Console.WriteLine("Is Valid Company Email: " + hasDomain);
+            Console.WriteLine("Extracted Language: " + language);
+            Console.WriteLine("Profile Card: " + profileCard);
+        }
+        #endregion
+    }
+
+    /// &lt;summary&gt;
+    /// The main execution program.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main entry point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            StringHelper helper = new StringHelper();
+            helper.ProcessUserInput();
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>Cleaned Email: john.doe@company.com
+Is Valid Company Email: True
+Extracted Language: C#
+Profile Card: User john.doe@company.com codes in C#.</pre></div>
+
+        <h3>COMPLETE EXAMPLE 2: Math Operations (Beyond Basic Arithmetic)</h3>
+        <p>The <code>Math</code> class is <strong>Static</strong>, meaning you don't use the <code>new</code> keyword. It contains functions for advanced rounding, powers, and comparisons.</p>
+        
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - The Static Math Class</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+
+namespace KnowledgeBase.Core
+{
+    /// &lt;summary&gt;
+    /// Demonstrates how to use the static Math class for explicit rounding and calculations.
+    /// &lt;/summary&gt;
+    public class MathHelper
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// Performs various mathematical operations.
+        /// &lt;/summary&gt;
+        public void PerformCalculations()
+        {
+            double rawPrice = 19.99;
+            double rating = 4.1;
+
+            // 1. Explicit Rounding (Ceiling always rounds UP, Floor always rounds DOWN)
+            double highestPossibleRating = Math.Ceiling(rating); // 5
+            double lowestPossibleRating = Math.Floor(rating); // 4
+            
+            // 2. Standard Rounding (with Midpoint behavior specified)
+            double roundedPrice = Math.Round(rawPrice, 1); // 20.0
+            
+            // 3. Absolute Value (Removes negative signs)
+            int distance = Math.Abs(-500); // 500
+            
+            // 4. Powers and Roots
+            double squared = Math.Pow(5, 2); // 5 to the power of 2 (25)
+            double root = Math.Sqrt(144); // Square root of 144 (12)
+
+            Console.WriteLine($"Ceiling of {rating}: {highestPossibleRating}");
+            Console.WriteLine($"Floor of {rating}: {lowestPossibleRating}");
+            Console.WriteLine($"5 Squared: {squared}");
+            Console.WriteLine($"Square Root of 144: {root}");
+        }
+        #endregion
+    }
+
+    /// &lt;summary&gt;
+    /// The main execution program.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main entry point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            MathHelper mathTools = new MathHelper();
+            mathTools.PerformCalculations();
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>Ceiling of 4.1: 5
+Floor of 4.1: 4
+5 Squared: 25
+Square Root of 144: 12</pre></div>
+
+        
+        <h3>COMPLETE EXAMPLE 3: DateTime, UTC, and Database Timestamps</h3>
+        <p>A very common question is: <em>"How does a Timestamp data type look in C#?"</em> The answer is: <strong>It doesn't exist.</strong> C# does not have a <code>Timestamp</code> keyword. Whether your database uses a <code>DATETIME</code> or a <code>TIMESTAMP</code>, they both map directly to the C# <code>DateTime</code> struct.</p>
+        <p>Furthermore, when saving a DateTime to a database, you must <strong>always use UTC time</strong> to avoid global timezone bugs.</p>
+        
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - DateTime, UTC, and Formats</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+
+namespace KnowledgeBase.Core
+{
+    /// &lt;summary&gt;
+    /// Demonstrates the critical difference between Local Time and UTC Time, 
+    /// and how to format them as Database Timestamps.
+    /// &lt;/summary&gt;
+    public class DateHelper
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// Explains how DateTime generates SQL Timestamps and handles timezones.
+        /// &lt;/summary&gt;
+        public void ProcessTimestamps()
+        {
+            // 1. LOCAL TIME (DateTime.Now)
+            // Grabs the time based on where the physical server is located (e.g., India).
+            // DANGER: If you move your server to New York, this time will change!
+            DateTime localTime = DateTime.Now;
+            
+            // 2. UNIVERSAL TIME (DateTime.UtcNow) -> ALWAYS USE THIS FOR DATABASES!
+            // Grabs the time at GMT 0 (London). This NEVER changes, no matter where 
+            // the server is located or if Daylight Savings Time happens.
+            DateTime utcTime = DateTime.UtcNow;
+            
+            // 3. THE DATABASE TIMESTAMP FORMAT
+            // Because C# has no 'Timestamp' type, we just format the DateTime into a strict string.
+            // yyyy (4-digit year), MM (2-digit month), dd (2-digit day)
+            // HH (24-hour clock), mm (minutes), ss (seconds)
+            string dbTimestampLocal = localTime.ToString("yyyy-MM-dd HH:mm:ss");
+            string dbTimestampUtc = utcTime.ToString("yyyy-MM-dd HH:mm:ss");
+            
+            // 4. Human Readable Formats
+            // For displaying to the user on the frontend
+            string friendlyDate = localTime.ToString("MMMM dd, yyyy"); // "August 30, 2026"
+            
+            Console.WriteLine("--- SERVER TIMES ---");
+            Console.WriteLine($"Local Time (Unsafe for DB): {dbTimestampLocal}");
+            Console.WriteLine($"UTC Time (Safe for DB):     {dbTimestampUtc}");
+            Console.WriteLine();
+            Console.WriteLine($"Friendly UI Date: {friendlyDate}");
+        }
+        #endregion
+    }
+
+    /// &lt;summary&gt;
+    /// The main execution program.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main entry point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            DateHelper calendar = new DateHelper();
+            calendar.ProcessTimestamps();
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>--- SERVER TIMES ---
+Local Time (Unsafe for DB): 2026-08-30 19:55:00
+UTC Time (Safe for DB):     2026-08-30 14:25:00
+
+Friendly UI Date: August 30, 2026</pre></div>
+
+<h2>B. Edge Cases & What Ifs</h2>
+        
+        <div class="callout callout-warn">
+            <span class="callout-title">What if I do Math.Round(2.5)?</span>
+            <p><strong>Scenario:</strong> You try to round 2.5 expecting it to become 3.</p>
+            <p><strong>Behavior:</strong> In C#, <code>Math.Round(2.5)</code> actually returns <strong>2</strong>! This is called "Banker's Rounding" (rounding to the nearest even number). It is used globally in finance to prevent statistical bias. If you want standard math class rounding, you must explicitly tell it: <code>Math.Round(2.5, MidpointRounding.AwayFromZero)</code>.</p>
+        </div>
+
+        <div class="callout callout-danger">
+            <span class="callout-title">What if I use DateTime.Now on a global server?</span>
+            <p><strong>Scenario:</strong> You save an article's publish time as <code>DateTime.Now</code> on a server in London, but a user reads it in Tokyo.</p>
+            <p><strong>Behavior:</strong> The time will be completely wrong for the user in Tokyo. You should <strong>never</strong> use <code>DateTime.Now</code> to save time in a database. Always use <code>DateTime.UtcNow</code> (Universal Coordinated Time) to save the time globally, and only convert it to the local timezone when displaying it on the user's screen.</p>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="07-datatable.html">&larr; Previous: DataTable</a>
+            <a href="#">Next: File Operations &rarr;</a>
+        </div>
+    </main>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+
+    <!-- Personal Notes Panel -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!&#10;&#10;Wrap code in triple backticks like this:&#10;```csharp&#10;int x = 5;&#10;```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+
+    <script>
+        function toggleNotes() {
+            if (window.hasDragged) { window.hasDragged = false; return; }
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                
+                // Parse markdown to HTML
+                prev.innerHTML = marked.parse(ta.value);
+                
+                // Apply Prism.js syntax highlighting to the newly parsed code blocks!
+                if (window.Prism) {
+                    Prism.highlightAllUnder(prev);
+                }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+
+        // Auto-save logic
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        let fileName = window.location.pathname.split('/').pop();
+        if (!fileName) fileName = 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        
+        if(localStorage.getItem(pageKey)) {
+            notesTextarea.value = localStorage.getItem(pageKey);
+        }
+
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('kb_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+        // Persist sidebar state across page loads
+        if(localStorage.getItem('kb_sidebar_collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+
+    <!-- Draggable Notes Button Script -->
+    <script>
+        const dragBtn = document.querySelector('.notes-toggle-btn');
+        let isDragging = false;
+        window.hasDragged = false; // Global flag to prevent click after drag
+        let offsetX, offsetY;
+
+        // Load saved position from localStorage
+        const savedX = localStorage.getItem('kb_notes_btn_x');
+        const savedY = localStorage.getItem('kb_notes_btn_y');
+        if (savedX && savedY) {
+            dragBtn.style.left = savedX + 'px';
+            dragBtn.style.top = savedY + 'px';
+            dragBtn.style.bottom = 'auto'; // override default CSS bottom
+            dragBtn.style.right = 'auto';  // override default CSS right
+        }
+
+        dragBtn.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            window.hasDragged = false; // Reset drag flag
+            offsetX = e.clientX - dragBtn.getBoundingClientRect().left;
+            offsetY = e.clientY - dragBtn.getBoundingClientRect().top;
+            dragBtn.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            window.hasDragged = true; // User is moving the mouse, so it's a drag
+            
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+            
+            // Prevent dragging off screen
+            newX = Math.max(0, Math.min(newX, window.innerWidth - dragBtn.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - dragBtn.offsetHeight));
+
+            dragBtn.style.left = newX + 'px';
+            dragBtn.style.top = newY + 'px';
+            dragBtn.style.bottom = 'auto';
+            dragBtn.style.right = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                dragBtn.style.cursor = 'grab';
+                // Save position for next page load
+                localStorage.setItem('kb_notes_btn_x', dragBtn.style.left.replace('px', ''));
+                localStorage.setItem('kb_notes_btn_y', dragBtn.style.top.replace('px', ''));
+            }
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+</body>
+</html>

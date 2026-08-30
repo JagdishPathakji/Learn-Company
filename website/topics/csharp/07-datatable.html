@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DataTable</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <style>
+        .arch-diagram { display: flex; flex-direction: column; gap: 20px; background: #1e293b; padding: 40px; border-radius: 8px; margin: 30px 0; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .arch-phase { border: 2px dashed #64748b; padding: 25px; border-radius: 8px; background: #0f172a; position: relative; }
+        .arch-phase-title { font-size: 1.2rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .step-row { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+        .box-concept { background: #3b82f6; padding: 15px 25px; border-radius: 6px; font-weight: 600; min-width: 200px; text-align: center; }
+        .box-alert { background: #ea580c; padding: 15px 25px; border-radius: 6px; font-weight: 600; min-width: 200px; text-align: center; color: white; }
+        .arrow-down { color: #94a3b8; font-size: 24px; text-align: center; margin: 10px 0; width: 200px; }
+        .concept-definition { background: #f1f5f9; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 20px; border-radius: 0 4px 4px 0; color: #0f172a; }
+        .concept-definition strong { color: #1d4ed8; font-size: 1.1rem; display: block; margin-bottom: 5px; }
+    </style>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="sidebar-category">C# Training</div>
+        <ul>
+            <li><a href="01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+            <li><a href="02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+            <li><a href="03-csharp-dotnet-history.html">3. C# Fundamentals - Intro</a></li>
+            <li><a href="04-scope-and-accessibility.html">4. Scope & Accessibility</a></li>
+            <li><a href="05-namespace-and-libraries.html">5. Namespace & Libraries</a></li>
+            <li><a href="06-enumerations.html">6. Enumerations (Enums)</a></li>
+            <li><a href="07-datatable.html" class="active">7. DataTable</a></li>
+            <li><a href="08-date-string-math.html">8. Date/String/Math</a></li>
+            <li><a href="09-file-operations.html">9. File Operations</a></li>
+            <li><a href="10-advanced-types.html">10. Types (AEIP)</a></li>
+            <li><a href="11-generics.html">11. Generics</a></li>
+            <li><a href="12-file-system.html">12. File System</a></li>
+            <li><a href="13-lambda-expressions.html">13. Lambda Expressions</a></li>
+            <li><a href="14-extension-methods.html">14. Extension Methods</a></li>
+            <li><a href="15-linq.html">15. LINQ</a></li>
+        </ul>
+        <div class="sidebar-category">Deep Dives (Custom)</div>
+        <ul>
+            <li><a href="custom-01-top-level-statements.html">Top-Level Statements vs Main</a></li>
+        </ul>
+    </aside>
+    
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>DataTable Deep Dive & State Tracking</h1>
+            <p class="metadata">Difficulty: Intermediate | Category: C# Data Structures</p>
+        </div>
+
+        <div class="callout callout-info">
+            <span class="callout-title">Mental Model</span>
+            <p>Think of a <code>DataTable</code> as an incredibly smart, self-aware Excel spreadsheet living entirely in your computer's RAM. Unlike a simple list of objects, a DataTable tracks <strong>history and state</strong>. It remembers what data used to look like before you edited it, it knows which rows you want to delete, and it enforces database rules (like unique IDs) directly in memory.</p>
+        </div>
+
+        <h2>A. Why Does This Exist?</h2>
+        <p>In modern C#, developers often use simple <code>List&lt;User&gt;</code> collections to hold data. However, standard Lists are "dumb"—they just hold objects. If you download 10,000 rows from a database, change 5 of them, and delete 2 of them, a standard <code>List</code> has no idea what changed.</p>
+        <p>Before modern tools like Entity Framework existed, Microsoft created the <code>DataTable</code>. Its entire purpose is to download a chunk of a database, let you modify it completely offline, and track exactly what you did using a hidden <code>RowState</code> flag. When you are done, you send the DataTable back to the database, and it knows exactly which SQL commands (UPDATE, INSERT, DELETE) to run!</p>
+
+        
+        <h2>B. Understanding the Terminology</h2>
+        <p>Before writing code, you must understand how the pieces of this in-memory ecosystem fit together:</p>
+        <ul>
+            <li><strong>DataSet (The Database):</strong> A <code>DataSet</code> is the outer container. It represents an entire database in RAM. It can hold multiple DataTables and the relationships between them.</li>
+            <li><strong>DataTable (The Table):</strong> Represents a single SQL table in memory.</li>
+            <li><strong>DataColumn and Constraints (The Schema):</strong> A DataTable doesn't just hold data; it enforces rules. When we define <code>DataColumn</code> objects, we can apply rules like <code>AllowDBNull = false</code>, <code>Unique = true</code>, and <code>AutoIncrement = true</code>. If C# code tries to violate these rules, the DataTable throws an exception instantly, without needing to check MySQL.</li>
+            <li><strong>DataRelation (The Foreign Key):</strong> If you have an Article table and a User_Comment table inside a DataSet, you can create a DataRelation linking them. This allows you to say: "Get me this Article, and now give me all child comments" all in RAM.</li>
+            <li><strong>DataView (The Sorted/Filtered Lens):</strong> A DataTable holds the raw row data. A <code>DataView</code> is a lens you put over the table to sort or filter it visually.</li>
+            <li><strong>DataAdapter (The Bridge):</strong> The <code>DataAdapter</code> is the messenger between your in-memory DataTable and the actual SQL Database (like MySQL). It opens the connection, runs a <code>SELECT</code> query to fill the table (<code>adapter.Fill()</code>), and later reads the RowStates to automatically generate and execute the correct <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> commands to save your changes (<code>adapter.Update()</code>).</li>
+        </ul>
+
+        <h2>C. The Magic of RowState Syncing</h2>
+        <p>The most powerful feature of a DataTable is that every <code>DataRow</code> secretly tracks its own history via the <code>RowState</code> property. This is exactly how the <code>DataAdapter</code> knows which SQL commands to run when syncing your offline changes back to the real MySQL database.</p>
+        <ul>
+            <li><strong>State is Unchanged:</strong> The DataAdapter ignores it.</li>
+            <li><strong>State is Modified:</strong> The DataAdapter automatically generates an <code>UPDATE</code> SQL statement.</li>
+            <li><strong>State is Deleted:</strong> The DataAdapter automatically generates a <code>DELETE</code> SQL statement.</li>
+            <li><strong>State is Added:</strong> The DataAdapter automatically generates an <code>INSERT</code> SQL statement.</li>
+        </ul>
+
+<h2>D. Building the Structure</h2>
+        <p>A DataTable is useless without structure. You must define its Columns and its Rules (Constraints) before you add data.</p>
+
+        <h3>COMPLETE EXAMPLE 1: Creating Tables and Constraints</h3>
+        <p>Let's create a table from scratch and add a <code>Unique</code> rule to it. If a developer tries to add duplicate data, the table will actively reject it.</p>
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - Basic DataTable and Constraints</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+using System.Data;
+
+namespace KnowledgeBase.Data
+{
+    /// &lt;summary&gt;
+    /// Demonstrates how to create a DataTable and enforce unique rules in memory.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main execution point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            // 1. Create the empty table structure
+            DataTable employeeTable = new DataTable("Employees");
+
+            // 2. Define the Columns
+            DataColumn idColumn = new DataColumn("Id", typeof(int));
+            idColumn.Unique = true; // RULE: No duplicate IDs allowed!
+            
+            DataColumn nameColumn = new DataColumn("Name", typeof(string));
+
+            // 3. Attach columns to the table
+            employeeTable.Columns.Add(idColumn);
+            employeeTable.Columns.Add(nameColumn);
+
+            // 4. Insert Data
+            employeeTable.Rows.Add(1, "Alice");
+            Console.WriteLine("Added Alice successfully.");
+
+            // 5. Test the Constraint
+            try
+            {
+                // This will instantly throw an exception!
+                employeeTable.Rows.Add(1, "Bob (Duplicate ID)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR BLOCKED: " + ex.Message);
+            }
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>Added Alice successfully.
+ERROR BLOCKED: Column 'Id' is constrained to be unique. Value '1' is already present.</pre></div>
+
+        <h2>E. Finding Data (Sorting and Filtering)</h2>
+        <p>Once your table is full of data, you need to find specific rows. You can do this visually for a User Interface (using <code>DataView</code>) or programmatically for backend code (using <code>Select()</code>).</p>
+
+        <h3>COMPLETE EXAMPLE 2: Visual Filtering (DataView)</h3>
+        <p>A <code>DataView</code> acts like a magnifying glass over your table. It filters the data for the user to see, but it does not actually delete or alter the original table.</p>
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - DataView Filtering</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+using System.Data;
+
+namespace KnowledgeBase.Data
+{
+    /// &lt;summary&gt;
+    /// Demonstrates how to visually filter data without modifying the source table.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main execution point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            DataTable articleTable = new DataTable("Articles");
+            articleTable.Columns.Add("Title", typeof(string));
+            articleTable.Columns.Add("Status", typeof(string));
+
+            articleTable.Rows.Add("C# Basics", "Published");
+            articleTable.Rows.Add("Advanced SQL", "Draft");
+
+            // Create a magnifying glass over the table
+            DataView publishedView = new DataView(articleTable);
+            
+            // Apply the filter
+            publishedView.RowFilter = "Status = 'Published'";
+
+            Console.WriteLine("--- Only Published Articles ---");
+            foreach (DataRowView viewRow in publishedView)
+            {
+                Console.WriteLine(viewRow["Title"]);
+            }
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>--- Only Published Articles ---
+C# Basics</pre></div>
+
+        <h3>COMPLETE EXAMPLE 3: Backend Filtering (Select)</h3>
+        <p>If you need to grab an array of rows to process in your backend code, use the <code>Select()</code> method. It takes two arguments: a Filter string, and a Sort string.</p>
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - The Select Method</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+using System.Data;
+
+namespace KnowledgeBase.Data
+{
+    /// &lt;summary&gt;
+    /// Demonstrates how to use Select() to query the DataTable like a database.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main execution point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            DataTable staffTable = new DataTable("Staff");
+            staffTable.Columns.Add("Name", typeof(string));
+            staffTable.Columns.Add("Age", typeof(int));
+            staffTable.Columns.Add("Salary", typeof(int));
+
+            staffTable.Rows.Add("Alice", 28, 75000);
+            staffTable.Rows.Add("Bob", 45, 90000);
+            staffTable.Rows.Add("Charlie", 22, 50000);
+
+            Console.WriteLine("--- High Earners (Sorted by Age DESC) ---");
+            
+            // arg 1: Filter (Who to get)
+            // arg 2: Sort (How to order them)
+            DataRow[] searchResults = staffTable.Select(
+                "Salary > 60000", 
+                "Age DESC"
+            );
+            
+            foreach (DataRow targetRow in searchResults)
+            {
+                Console.WriteLine($"{targetRow["Name"]} (Age: {targetRow["Age"]})");
+            }
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>--- High Earners (Sorted by Age DESC) ---
+Bob (Age: 45)
+Alice (Age: 28)</pre></div>
+
+        <h2>F. Editing Data (Transactions)</h2>
+        <p>When changing data, you can edit it directly, or you can use a Transaction block (Begin/End Edit). Transactions allow you to group multiple changes together, meaning the DataTable won't trigger any validation rules until you completely finish.</p>
+
+        <h3>COMPLETE EXAMPLE 4: Direct vs Transactional Edits</h3>
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - BeginEdit and EndEdit</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+using System.Data;
+
+namespace KnowledgeBase.Data
+{
+    /// &lt;summary&gt;
+    /// Demonstrates how to safely edit rows and cancel mistakes.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main execution point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            DataTable employeeTable = new DataTable();
+            employeeTable.Columns.Add("Name", typeof(string));
+            employeeTable.Rows.Add("Jagdish Pathakji");
+
+            DataRow targetRow = employeeTable.Rows[0];
+            
+            // 1. Direct Edit (Happens instantly)
+            targetRow["Name"] = "Jagdish";
+            Console.WriteLine("After Direct Edit: " + targetRow["Name"]);
+
+            // 2. Transactional Edit
+            // "I am about to make related changes. Treat them as one operation."
+            targetRow.BeginEdit();
+            targetRow["Name"] = "Jay Kishan";
+            
+            // Oops, we made a mistake! Let's abort the transaction.
+            targetRow.CancelEdit();
+            Console.WriteLine("After CancelEdit (Restored): " + targetRow["Name"]);
+
+            // Let's do it properly
+            targetRow.BeginEdit();
+            targetRow["Name"] = "Jay Kishan";
+            targetRow.EndEdit(); // Commits the transaction
+            Console.WriteLine("After EndEdit: " + targetRow["Name"]);
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>After Direct Edit: Jagdish
+After CancelEdit (Restored): Jagdish
+After EndEdit: Jay Kishan</pre></div>
+
+        <h2>G. RowStates and Deletion (The Core Feature)</h2>
+        <p>The most important concept in a DataTable is the <code>RowState</code>. This tells the database exactly what needs to happen to this row later. You must understand the difference between <code>Delete()</code> and <code>Remove()</code>.</p>
+
+        <h3>COMPLETE EXAMPLE 5: Delete vs Remove vs AcceptChanges</h3>
+        <div class="code-container" style="border-radius: 6px 6px 0 0;">
+            <div class="code-header"><span>C# - RowState Tracking</span><button class="copy-btn">Copy</button></div>
+            <pre><code class="language-csharp">using System;
+using System.Data;
+
+namespace KnowledgeBase.Data
+{
+    /// &lt;summary&gt;
+    /// Explores the lifecycle of a DataRow from Unchanged to Deleted and Detached.
+    /// &lt;/summary&gt;
+    class Program
+    {
+        #region Public Methods
+        /// &lt;summary&gt;
+        /// The main execution point of the program.
+        /// &lt;/summary&gt;
+        static void Main()
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add("Name", typeof(string));
+            
+            table.Rows.Add("Row Y (To Delete)");
+            table.Rows.Add("Row Z (To Remove)");
+            table.Rows.Add("Row X (To RemoveAt)");
+
+            // Establish the "Baseline". All rows become 'Unchanged'
+            table.AcceptChanges();
+
+            DataRow rowY = table.Rows[0];
+            DataRow rowZ = table.Rows[1];
+
+            // --- 1. THE DELETE() METHOD ---
+            // Delete() marks the row as 'Deleted' but DOES NOT physically remove it!
+            // It tracks it so the database knows to delete it later.
+            Console.WriteLine("Initial rowY State: " + rowY.RowState); // Unchanged
+            rowY.Delete();
+            Console.WriteLine("After Delete(): " + rowY.RowState); // Deleted
+            
+            // --- 2. THE REMOVE() METHOD ---
+            // Remove() physically destroys the row instantly. It is severed from the table.
+            table.Rows.Remove(rowZ);
+            Console.WriteLine("After Remove(): " + rowZ.RowState); // Detached
+
+            // --- 3. THE REMOVEAT() METHOD ---
+            // Destroys the row at a specific index. (Index 1 is now Row X, since Z is gone)
+            table.Rows.RemoveAt(1); 
+
+            Console.WriteLine($"Total physical rows left in table: {table.Rows.Count}"); // Only Row Y is left (marked Deleted)
+
+            // --- 4. COMMITTING CHANGES ---
+            // AcceptChanges() tells the table: "Permanently commit all my edits and deletions."
+            table.AcceptChanges();
+            Console.WriteLine("After AcceptChanges: " + rowY.RowState); // Detached (It is finally gone forever)
+        }
+        #endregion
+    }
+}</code></pre>
+        </div>
+        <div class="console-output"><strong>Console Output:</strong><pre>Initial rowY State: Unchanged
+After Delete(): Deleted
+After Remove(): Detached
+Total physical rows left in table: 1
+After AcceptChanges: Detached</pre></div>
+
+        <h2>H. Edge Cases & What Ifs</h2>
+        <div class="callout callout-danger">
+            <span class="callout-title">What if I load millions of rows into a DataTable?</span>
+            <p><strong>Scenario:</strong> You run <code>SELECT * FROM SystemLogs</code> and try to fill a DataTable with 5 million rows.</p>
+            <p><strong>Behavior:</strong> The DataTable stores <em>everything</em> in RAM. Furthermore, because it tracks history, constraints, and RowStates, it carries a massive memory overhead (often 3x to 4x the raw data size). Loading millions of rows will cause your server's RAM to spike massively, eventually crashing the entire application with a fatal <code>OutOfMemoryException</code>.</p>
+            <p><strong>Solution:</strong> NEVER use a DataTable for massive datasets. If you just need to read millions of rows (for example, to export them to a CSV), use a <strong>DataReader</strong> (like <code>SqlDataReader</code> or <code>MySqlDataReader</code>). A DataReader is a forward-only stream that processes one row at a time and discards it, using almost zero RAM regardless of whether you process 10 rows or 10 billion rows.</p>
+        </div>
+
+        
+        <div class="callout callout-danger">
+            <span class="callout-title">What if I use RejectChanges() instead of AcceptChanges()?</span>
+            <p><strong>Scenario:</strong> You delete a row and edit a title, but then the user clicks "Cancel" on the UI.</p>
+            <p><strong>Behavior:</strong> If you call <code>RejectChanges()</code>, the DataTable instantly rolls back time to the state it was in during the last <code>AcceptChanges()</code>. The deleted row comes back, the edits vanish, and the RowStates return to <code>Unchanged</code>.</p>
+        </div>
+
+        <div class="callout callout-warn">
+            <span class="callout-title">What if I try to access data inside a Deleted row?</span>
+            <p><strong>Scenario:</strong> You call <code>row.Delete()</code> and then try to <code>Console.WriteLine(row["Name"])</code>.</p>
+            <p><strong>Behavior:</strong> The C# compiler will throw a <code>DeletedRowInaccessibleException</code>. Even though the row is physically still in the table, its current data is locked. You can, however, bypass this by explicitly asking for its past data: <code>row["Name", DataRowVersion.Original]</code>.</p>
+        </div>
+
+        <h2>I. Production Engineering Perspective</h2>
+        <p>In modern C# (.NET 8+), developers rarely use DataTables to ferry data back and forth to SQL Server. We use an ORM (Object-Relational Mapper) like <strong>Entity Framework Core</strong>.</p>
+        <p>However, Entity Framework works on the <em>exact same principles</em> as the DataTable! When you load data in EF Core, a hidden <code>ChangeTracker</code> marks objects as <code>Unchanged</code>. When you modify them, they become <code>Modified</code>. When you call <code>dbContext.SaveChanges()</code>, it acts identically to <code>AcceptChanges()</code>, converting those states into real SQL queries. Understanding the DataTable is the secret to mastering modern database architecture.</p>
+
+        <div class="nav-buttons">
+            <a href="06-enumerations.html">&larr; Previous: Enumerations</a>
+            <a href="custom-01-top-level-statements.html">Next: Top-Level Statements &rarr;</a>
+        </div>
+    </main>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+
+    <!-- Personal Notes Panel -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!&#10;&#10;Wrap code in triple backticks like this:&#10;```csharp&#10;int x = 5;&#10;```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+
+    <script>
+        function toggleNotes() {
+            if (window.hasDragged) { window.hasDragged = false; return; }
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                
+                // Parse markdown to HTML
+                prev.innerHTML = marked.parse(ta.value);
+                
+                // Apply Prism.js syntax highlighting to the newly parsed code blocks!
+                if (window.Prism) {
+                    Prism.highlightAllUnder(prev);
+                }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+
+        // Auto-save logic
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        let fileName = window.location.pathname.split('/').pop();
+        if (!fileName) fileName = 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        
+        if(localStorage.getItem(pageKey)) {
+            notesTextarea.value = localStorage.getItem(pageKey);
+        }
+
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('kb_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+        // Persist sidebar state across page loads
+        if(localStorage.getItem('kb_sidebar_collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+
+
+    <!-- Draggable Notes Button Script -->
+    <script>
+        const dragBtn = document.querySelector('.notes-toggle-btn');
+        let isDragging = false;
+        window.hasDragged = false; // Global flag to prevent click after drag
+        let offsetX, offsetY;
+
+        // Load saved position from localStorage
+        const savedX = localStorage.getItem('kb_notes_btn_x');
+        const savedY = localStorage.getItem('kb_notes_btn_y');
+        if (savedX && savedY) {
+            dragBtn.style.left = savedX + 'px';
+            dragBtn.style.top = savedY + 'px';
+            dragBtn.style.bottom = 'auto'; // override default CSS bottom
+            dragBtn.style.right = 'auto';  // override default CSS right
+        }
+
+        dragBtn.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            window.hasDragged = false; // Reset drag flag
+            offsetX = e.clientX - dragBtn.getBoundingClientRect().left;
+            offsetY = e.clientY - dragBtn.getBoundingClientRect().top;
+            dragBtn.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            window.hasDragged = true; // User is moving the mouse, so it's a drag
+            
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+            
+            // Prevent dragging off screen
+            newX = Math.max(0, Math.min(newX, window.innerWidth - dragBtn.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - dragBtn.offsetHeight));
+
+            dragBtn.style.left = newX + 'px';
+            dragBtn.style.top = newY + 'px';
+            dragBtn.style.bottom = 'auto';
+            dragBtn.style.right = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                dragBtn.style.cursor = 'grab';
+                // Save position for next page load
+                localStorage.setItem('kb_notes_btn_x', dragBtn.style.left.replace('px', ''));
+                localStorage.setItem('kb_notes_btn_y', dragBtn.style.top.replace('px', ''));
+            }
+        });
+    </script>
+
+    <script src="../../js/ui-enhancements.js"></script>
+</body>
+</html>
