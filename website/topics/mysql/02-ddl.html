@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2. DDL & Schema Internals - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+    <div class="tech-switcher">
+            <a href="../../index.html#csharp" class="tech-btn">C# .NET</a>
+            <a href="../../index.html#mysql" class="tech-btn active">MySQL</a>
+        </div>
+        
+        <div class="sidebar-category">MySQL Engine & Querying</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html" class="active">2. DDL & Schema Internals</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-dql.html">4. DQL & Execution</a></li>
+            <li><a href="05-joins.html">5. JOINs & Optimizer</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregation</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-unions.html">8. Unions</a></li>
+            <li><a href="09-indexes-and-advanced.html">9. Indexes & CTEs</a></li>
+            <li><a href="10-stored-procedures.html">10. Stored Procedures</a></li>
+            <li><a href="11-views.html">11. Views</a></li>
+            <li><a href="12-backup-restore.html">12. Backup & Restore</a></li>
+            <li><a href="13-explain.html">13. EXPLAIN & Tuning</a></li>
+            <li><a href="14-transactions.html">14. Transactions & MVCC</a></li>
+            <li><a href="15-internals-map.html">15. Final Internals Map</a></li>
+        </ul>
+
+        <div class="sidebar-category">C# Curriculum</div>
+        <ul>
+            <li><a href="../csharp/01-visual-studio-2022.html">Switch to C# Topics ➔</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>2. DDL & Schema Internals</h1>
+            <p class="metadata">MySQL Engine Internals & Querying</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="ddl-overview">Data Definition Language (DDL)</h2>
+            <p>DDL statements (<code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code>) define the structure of the database. Unlike DML (Insert/Update/Delete), DDL operations in MySQL historically caused locking issues, though modern MySQL has introduced <strong>Online DDL</strong>.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="create-table">CREATE TABLE & File-Per-Table Internals</h2>
+            <p>When you create a table, you aren't just defining rules; you are instructing the OS and the Storage Engine to allocate physical structures.</p>
+            
+<pre><code class="language-sql">CREATE TABLE employees (
+    emp_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    hire_date DATE,
+    department_id INT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;</code></pre>
+
+            <h3 id="internals-create">What happens internally during CREATE?</h3>
+            <ul>
+                <li><strong>Data Dictionary Update:</strong> MySQL 8.0 uses a transactional data dictionary stored in InnoDB tables. It registers the table schema, columns, and types.</li>
+                <li><strong>Physical File Creation:</strong> Assuming <code>innodb_file_per_table=1</code> (default), InnoDB creates a physical file named <code>employees.ibd</code> on your hard drive.</li>
+                <li><strong>Clustered Index Creation:</strong> InnoDB <em>always</em> organizes table data based on the Primary Key. The <code>emp_id</code> becomes the root of a B+Tree structure. The actual row data is physically stored in the leaf nodes of this B+Tree.</li>
+            </ul>
+
+            <div class="callout callout-info">
+                <span class="callout-title">The Clustered Index Rule</span>
+                <p>If you don't define a PRIMARY KEY, InnoDB looks for a UNIQUE NOT NULL index to use as the clustered index. If neither exists, InnoDB silently generates a hidden 6-byte row ID column to cluster the data. <strong>Always define a Primary Key explicitly</strong> to avoid performance penalties.</p>
+            </div>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="alter-table">ALTER TABLE & Online DDL</h2>
+            <p>Modifying a table structure in production used to be a nightmare because it required a full table lock.</p>
+
+<pre><code class="language-sql">-- Adding a column
+ALTER TABLE employees ADD COLUMN status VARCHAR(20) DEFAULT 'Active';
+
+-- Changing a data type
+ALTER TABLE employees MODIFY COLUMN first_name VARCHAR(100);</code></pre>
+
+            <h3 id="internals-alter">What happens internally during ALTER?</h3>
+            <p>Modern MySQL uses <strong>Online DDL</strong>. Depending on the operation, InnoDB performs it in one of three ways:</p>
+            <ol>
+                <li><strong>INSTANT:</strong> (MySQL 8.0+) Adding a column to the end of a table. It only updates the Data Dictionary metadata. It takes 0.01 seconds, even on a 500GB table! The physical rows aren't rewritten until they are updated later.</li>
+                <li><strong>INPLACE:</strong> Rebuilds the B+Tree structure in the background but allows concurrent INSERT/UPDATE/DELETE operations. An internal "Row Log" tracks ongoing changes and applies them at the end.</li>
+                <li><strong>COPY:</strong> (The worst case). MySQL creates a hidden temp table, copies every single row over, applies the change, drops the old table, and renames the new one. The table is locked for writes during this time. (Example: changing a column data type).</li>
+            </ol>
+            
+            <div class="advanced-box">
+                <span class="advanced-title">Edge Case: ALGORITHM Clause</span>
+                <p>To prevent accidental production outages, explicitly enforce the algorithm. If it requires a copy, the query will safely fail rather than locking production:</p>
+                <pre><code class="language-sql">ALTER TABLE employees ADD COLUMN email VARCHAR(100), ALGORITHM=INSTANT;</code></pre>
+            </div>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="drop-truncate">DROP vs TRUNCATE Internals</h2>
+
+            <table class="linq-table">
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Internal Behavior</th>
+                        <th>Logging & Recovery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>DELETE FROM table;</code></td>
+                        <td>Scans the B+Tree and marks every row as deleted. (DML)</td>
+                        <td>Generates massive Undo Logs and Redo Logs. Very slow. Can be rolled back.</td>
+                    </tr>
+                    <tr>
+                        <td><code>TRUNCATE TABLE table;</code></td>
+                        <td>Drops the physical <code>.ibd</code> file and creates a brand new, empty one. (DDL)</td>
+                        <td>Does not log row deletions. Extremely fast. Cannot be rolled back. Reset AUTO_INCREMENT.</td>
+                    </tr>
+                    <tr>
+                        <td><code>DROP TABLE table;</code></td>
+                        <td>Deletes the metadata from the Data Dictionary and deletes the physical <code>.ibd</code> file from disk.</td>
+                        <td>Releases all disk space back to the OS immediately.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="interview-questions">Interview: What Happens Internally?</h2>
+            
+            <div class="advanced-box">
+                <span class="advanced-title">Scenario</span>
+                <p><strong>Action:</strong> You run <code>TRUNCATE TABLE audit_logs;</code> on a 50GB table.</p>
+                <p><strong>Question:</strong> Why is this instant, whereas <code>DELETE FROM audit_logs;</code> takes 20 minutes?</p>
+                <details>
+                    <summary>View the Internal Execution Path</summary>
+                    <div>
+                        <p><code>DELETE</code> is a DML operation. The Execution Engine must fetch every single page of the table into the Buffer Pool. For every row, it must:</p>
+                        <ol>
+                            <li>Write the old version of the row to the <strong>Undo Log</strong> (in case you ROLLBACK).</li>
+                            <li>Write the change to the <strong>Redo Log</strong> (for crash recovery).</li>
+                            <li>Mark the row as deleted in the data page (MVCC).</li>
+                        </ol>
+                        <p>This generates immense CPU and disk I/O.</p>
+                        <br>
+                        <p><code>TRUNCATE</code> is a DDL operation. The Storage Engine bypasses the Buffer Pool entirely. It simply goes to the operating system, deletes the physical <code>audit_logs.ibd</code> file, and instantly creates a new, empty <code>audit_logs.ibd</code> file. It does not generate row-level Undo or Redo logs.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    
+    <!-- Personal Notes Panel -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!
+
+Wrap code in triple backticks:
+```sql
+SELECT * FROM users;
+```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+
+    <script>
+        function toggleNotes() {
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                
+                if (typeof marked !== 'undefined') {
+                    prev.innerHTML = marked.parse(ta.value);
+                } else {
+                    prev.innerHTML = "<p>Markdown parser failed to load.</p>";
+                }
+                
+                if (window.Prism) {
+                    Prism.highlightAllUnder(prev);
+                }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        let fileName = window.location.pathname.split('/').pop();
+        if (!fileName) fileName = 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        
+        if(localStorage.getItem(pageKey)) {
+            notesTextarea.value = localStorage.getItem(pageKey);
+        }
+
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

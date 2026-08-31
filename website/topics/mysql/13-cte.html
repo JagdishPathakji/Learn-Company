@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13. Common Table Expressions (CTE) - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="tech-switcher">
+            <a href="../../index.html#csharp" class="tech-btn">C# .NET</a>
+            <a href="../../index.html#mysql" class="tech-btn active">MySQL</a>
+        </div>
+
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html" class="active">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>13. Common Table Expressions (CTE)</h1>
+            <p class="metadata">Advanced SQL</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="cte-overview">CTEs vs Subqueries</h2>
+            <p>A Common Table Expression (<code>WITH cte AS (...)</code>) provides a temporary result set that exists only during the execution scope of a single SQL statement. Introduced in MySQL 8.0, CTEs largely replace derived tables (subqueries in the <code>FROM</code> clause).</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="execution-strategy">Materialization vs Merging (Optimizer)</h2>
+            <p>When you define a CTE, does MySQL physically create a temporary table in memory, or does it just rewrite the SQL?</p>
+
+            <h3>1. The Merge Strategy (Default)</h3>
+            <p>If the CTE contains simple SELECT rules, the MySQL Optimizer applies the <strong>Merge Algorithm</strong>. It literally unpacks the CTE definition and merges it into the outer query's execution plan. No physical temporary tables are created. It behaves exactly like an inline macro.</p>
+
+            <h3>2. The Materialization Strategy</h3>
+            <p>If the CTE contains <code>GROUP BY</code>, <code>DISTINCT</code>, <code>LIMIT</code>, or Aggregate functions, the Optimizer <strong>cannot</strong> merge it. It must use the <strong>Materialization Algorithm</strong>.</p>
+            <ul>
+                <li>The Execution Engine creates an Internal Temporary Table.</li>
+                <li>It executes the CTE query and populates the temporary table.</li>
+                <li>The outer query then reads from this temporary table.</li>
+                <li>If the CTE is referenced multiple times in the outer query, the materialized temp table is reused, saving significant CPU compared to a subquery which might re-execute.</li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="recursive-cte">Recursive CTEs</h2>
+            <p>Recursive CTEs allow querying hierarchical data (e.g., an employee org chart). They execute in a strict two-phase loop:</p>
+            <ol>
+                <li><strong>Anchor Member:</strong> Executes once to establish the base result set (e.g., finding the CEO).</li>
+                <li><strong>Recursive Member:</strong> Executes repeatedly, joining against the result of the <em>previous</em> iteration, until no new rows are returned.</li>
+            </ol>
+            <p>Internally, MySQL creates a temporary table that stores the growing result set and uses a working buffer for the current iteration.</p>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!
+
+Wrap code in triple backticks:
+```sql
+SELECT * FROM users;
+```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    <script>
+        function toggleNotes() { document.getElementById('notesPanel').classList.toggle('open'); document.body.classList.toggle('notes-open'); }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes'); const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite'); const tabP = document.getElementById('tabPreview');
+            if(mode === 'preview') {
+                ta.style.display = 'none'; prev.style.display = 'block'; tabW.classList.remove('active'); tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else { ta.style.display = 'block'; prev.style.display = 'none'; tabW.classList.add('active'); tabP.classList.remove('active'); }
+        }
+        const notesTextarea = document.getElementById('personalNotes'); const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html'; const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value); saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

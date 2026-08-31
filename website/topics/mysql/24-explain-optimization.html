@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24. EXPLAIN & Optimizer Tuning - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="tech-switcher">
+            <a href="../../index.html#csharp" class="tech-btn">C# .NET</a>
+            <a href="../../index.html#mysql" class="tech-btn active">MySQL</a>
+        </div>
+
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html" class="active">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>24. EXPLAIN & Optimizer Tuning</h1>
+            <p class="metadata">Admin & Internals</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="explain-overview">The EXPLAIN Keyword</h2>
+            <p><code>EXPLAIN</code> allows you to peek into the MySQL Optimizer's chosen execution plan. <code>EXPLAIN ANALYZE</code> (introduced in MySQL 8.0.18) actually executes the query and provides the physical time spent in each iterator.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="access-methods">Interpreting Access Methods (The 'type' column)</h2>
+            <p>When reading an EXPLAIN output, the <code>type</code> column indicates how the Execution Engine accessed the rows. From fastest to slowest:</p>
+
+            <ul>
+                <li><strong>system / const:</strong> The table has exactly one row, or you queried a Primary Key with a literal equality. (Instant lookup).</li>
+                <li><strong>eq_ref:</strong> A Primary Key or Unique index was used in a JOIN.</li>
+                <li><strong>ref:</strong> A non-unique Secondary Index was used for an equality lookup.</li>
+                <li><strong>range:</strong> An index was used, but to retrieve a range of rows (e.g., <code>BETWEEN</code>, <code>></code>).</li>
+                <li><strong>index:</strong> A Full Index Scan. The engine scanned the leaf nodes of the B+Tree sequentially, but didn't read the physical table rows.</li>
+                <li><strong>ALL:</strong> A Full Table Scan. The engine read every physical page of the table from disk into the Buffer Pool. (Catastrophic for large tables).</li>
+            </ul>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span><span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    <script>
+        function toggleNotes() { document.getElementById('notesPanel').classList.toggle('open'); document.body.classList.toggle('notes-open'); }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes'); const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite'); const tabP = document.getElementById('tabPreview');
+            if(mode === 'preview') {
+                ta.style.display = 'none'; prev.style.display = 'block'; tabW.classList.remove('active'); tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else { ta.style.display = 'block'; prev.style.display = 'none'; tabW.classList.add('active'); tabP.classList.remove('active'); }
+        }
+        const notesTextarea = document.getElementById('personalNotes'); const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html'; const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value); saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

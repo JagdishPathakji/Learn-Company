@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12. Triggers & Execution Timing - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="tech-switcher">
+            <a href="../../index.html#csharp" class="tech-btn">C# .NET</a>
+            <a href="../../index.html#mysql" class="tech-btn active">MySQL</a>
+        </div>
+
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html" class="active">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>12. Triggers & Execution Timing</h1>
+            <p class="metadata">Advanced SQL</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="triggers-overview">Trigger Execution & Internals</h2>
+            <p>A Trigger is a named database object associated with a table that activates automatically in response to an <code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code>. </p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="trigger-timing">BEFORE vs AFTER Triggers</h2>
+            <p>The distinction between BEFORE and AFTER defines exactly when the Execution Engine fires the trigger relative to the InnoDB Buffer Pool modification.</p>
+
+            <table class="linq-table">
+                <thead>
+                    <tr>
+                        <th>Timing</th>
+                        <th>Internal Behavior</th>
+                        <th>Primary Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>BEFORE</code></td>
+                        <td>Fires <em>before</em> the row is modified in the Buffer Pool. The trigger can intercept and modify the <code>NEW</code> values before they are written to the page.</td>
+                        <td>Data validation, formatting, or dynamically calculating defaults.</td>
+                    </tr>
+                    <tr>
+                        <td><code>AFTER</code></td>
+                        <td>Fires <em>after</em> the Buffer Pool page is modified, but <em>before</em> the transaction commits.</td>
+                        <td>Audit logging (writing to a separate table), because you know the original DML operation succeeded.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="transaction-boundaries">Triggers and Transaction Boundaries</h2>
+            <p>The most important internal concept of a Trigger is that it <strong>executes within the same transaction</strong> as the statement that invoked it.</p>
+
+            <p>If you execute an <code>UPDATE</code> that fires an <code>AFTER UPDATE</code> trigger (which inserts a row into an audit table):</p>
+            <ul>
+                <li>The original UPDATE generates Undo/Redo logs and modifies a page.</li>
+                <li>The Trigger's INSERT generates its own Undo/Redo logs and modifies a page.</li>
+                <li>If the Trigger fails (e.g., the audit table doesn't exist or violates a constraint), <strong>the entire transaction rolls back</strong>. The original UPDATE is undone via the Undo Log.</li>
+            </ul>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!
+
+Wrap code in triple backticks:
+```sql
+SELECT * FROM users;
+```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    <script>
+        function toggleNotes() { document.getElementById('notesPanel').classList.toggle('open'); document.body.classList.toggle('notes-open'); }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes'); const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite'); const tabP = document.getElementById('tabPreview');
+            if(mode === 'preview') {
+                ta.style.display = 'none'; prev.style.display = 'block'; tabW.classList.remove('active'); tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else { ta.style.display = 'block'; prev.style.display = 'none'; tabW.classList.add('active'); tabP.classList.remove('active'); }
+        }
+        const notesTextarea = document.getElementById('personalNotes'); const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html'; const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value); saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>
