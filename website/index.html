@@ -33,11 +33,17 @@
         <ul>
             <li><a href="topics/csharp/custom-01-top-level-statements.html">Top-Level Statements vs Main</a></li>
         </ul>
+    
+        <div class="sidebar-category">MySQL Curriculum</div>
+        <ul>
+            <li><a href="topics/mysql/01-introduction.html">Switch to MySQL Topics ➔</a></li>
+        </ul>
     </aside>
+
     <main class="main-content">
         <div class="topic-header">
-            <h1>C# & .NET Engineering Knowledge Base</h1>
-            <p style="color: var(--text-secondary); font-size: 1.1rem; margin-top: 10px;">A comprehensive, premium reference guide for professional C# development.</p>
+            <h1>Engineering Knowledge Base</h1>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; margin-top: 10px;">A comprehensive, premium reference guide for professional C# and MySQL development.</p>
         </div>
 
         <div class="callout callout-info" style="margin-bottom: 40px;">
@@ -45,7 +51,7 @@
             <p style="margin-bottom: 0;">This knowledge base is designed like a premium technical textbook. Use the sidebar to navigate chronologically through the curriculum, or use the Table of Contents on any page to jump to specific concepts. Use the <strong>Personal Notes</strong> panel in the bottom right to draft Markdown notes that save automatically to your browser.</p>
         </div>
 
-        <h2 style="margin-top: 0;">Curriculum Overview</h2>
+        <h2 style="margin-top: 0;">C# Curriculum Overview</h2>
         
         <div class="concept-block">
             <h3 class="concept-title">Module 1: Core Fundamentals</h3>
@@ -86,7 +92,59 @@
                 <li><a href="topics/csharp/custom-01-top-level-statements.html">Top-Level Statements vs Traditional Main()</a></li>
             </ul>
         </div>
+    
+        <h2 style="margin-top: 40px;">MySQL Curriculum Overview</h2>
+
+        <div class="concept-block">
+            <h3 class="concept-title">Module 1: MySQL Core & Schema</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/mysql/01-introduction.html">Intro, Architecture & Guidelines</a></li>
+                <li><a href="topics/mysql/02-ddl.html">DDL, Constraints & Internals</a></li>
+                <li><a href="topics/mysql/03-dml.html">DML & Buffer Pool Interaction</a></li>
+                <li><a href="topics/mysql/04-querying.html">DQL & Logical Execution</a></li>
+            </ul>
+        </div>
+        
+        <div class="concept-block">
+            <h3 class="concept-title">Module 2: Relational Logic & Optimization</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/mysql/05-joins.html">JOINs & Optimizer Execution</a></li>
+                <li><a href="topics/mysql/06-aggregate-functions.html">Aggregate Functions & Null Handling</a></li>
+                <li><a href="topics/mysql/07-subqueries.html">Subqueries & Materialization</a></li>
+                <li><a href="topics/mysql/08-set-operations.html">Set Operations (UNION vs UNION ALL)</a></li>
+                <li><a href="topics/mysql/09-indexing.html">Indexing Internals (Clustered vs Secondary)</a></li>
+                <li><a href="topics/mysql/10-composite-indexes.html">Composite Indexes (Leftmost Prefixing)</a></li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h3 class="concept-title">Module 3: Advanced SQL Structures</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/mysql/11-functions.html">Functions & Determinism</a></li>
+                <li><a href="topics/mysql/12-triggers.html">Triggers & Execution Timing</a></li>
+                <li><a href="topics/mysql/13-cte.html">CTEs (Common Table Expressions)</a></li>
+                <li><a href="topics/mysql/14-cursors.html">Cursors & Row-By-Row Execution</a></li>
+                <li><a href="topics/mysql/15-temporary-tables.html">Temporary Tables</a></li>
+                <li><a href="topics/mysql/16-prepared-statements.html">Prepared Statements</a></li>
+                <li><a href="topics/mysql/17-stored-procedures.html">Stored Procedures (Deep Dive)</a></li>
+                <li><a href="topics/mysql/18-views.html">Views & Algorithms</a></li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h3 class="concept-title">Module 4: Administration & Internals</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/mysql/19-backup-restore.html">Logical vs Physical Backups</a></li>
+                <li><a href="topics/mysql/20-single-transaction-dump.html">Single-Transaction Dumps (MVCC)</a></li>
+                <li><a href="topics/mysql/21-character-set-collation.html">Character Set & Collation</a></li>
+                <li><a href="topics/mysql/22-logging-internals.html">Logging Internals (Undo, Redo, Binlog)</a></li>
+                <li><a href="topics/mysql/23-transactions.html">Transactions & Isolation Levels</a></li>
+                <li><a href="topics/mysql/24-explain-optimization.html">EXPLAIN & Optimizer Tuning</a></li>
+                <li><a href="topics/mysql/25-internals-map.html">Final Internals Map</a></li>
+            </ul>
+        </div>
     </main>
+
     <script src="js/app.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>

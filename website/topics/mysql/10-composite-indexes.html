@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10. Composite Index Prefixing (Deep Dive) - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html" class="active">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+
+        <div class="sidebar-category">C# Curriculum</div>
+        <ul>
+            <li><a href="../csharp/01-visual-studio-2022.html">Switch to C# Topics ➔</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>10. Composite Index Prefixing (Deep Dive)</h1>
+            <p class="metadata">Performance & Indexing</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="composite-overview">Composite Indexes & Leftmost Prefixing</h2>
+            <p>A Composite Index is a single physical B+Tree index built across multiple columns. In this section, "prefixing" strictly refers to the <strong>Leftmost Prefix behavior</strong> of the B+Tree structure, which dictates how the MySQL Optimizer uses the index.</p>
+            
+            <div class="callout callout-warning">
+                <span class="callout-title">Clarification</span>
+                <p>Do not confuse this with <em>String Prefix Indexes</em> (e.g., <code>INDEX(title(20))</code>). We are analyzing how multi-column indexes govern query execution paths based on column ordering.</p>
+            </div>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="the-index-structure">The Physical Structure of the B+Tree</h2>
+            <p>Assume we create the following composite index on the <code>articles</code> table:</p>
+            <pre><code class="language-sql">CREATE INDEX idx_author_status_date ON articles (author_id, status, created_at);</code></pre>
+
+            <p>Internally, InnoDB builds a single B+Tree. It sorts the entries <strong>strictly hierarchically</strong>:</p>
+            <ol>
+                <li>First, it sorts entirely by <code>author_id</code>.</li>
+                <li><strong>Only when</strong> the <code>author_id</code> is identical between two rows does it sort those specific rows by <code>status</code>.</li>
+                <li><strong>Only when</strong> both <code>author_id</code> and <code>status</code> are identical does it sort those rows by <code>created_at</code>.</li>
+            </ol>
+            <p>Because of this physical hierarchy, the Optimizer can only use the index for <strong>Index Access / Search</strong> if your <code>WHERE</code> clause provides the columns from left to right without skipping.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="execution-analysis">Execution Path Analysis (Different Cases)</h2>
+            
+            <p>Let's deeply analyze how the Optimizer treats different queries against <code>INDEX(author_id, status, created_at)</code>.</p>
+
+            <h3>Case 1: Equality + Equality (Perfect Prefix)</h3>
+            <pre><code class="language-sql">SELECT * FROM articles WHERE author_id = 101 AND status = 'Published';</code></pre>
+            <p><strong>Execution:</strong> The Optimizer uses the first two columns of the index for <em>Index Access</em>. It navigates the B+Tree directly to <code>author_id=101</code>, and then within that subtree, navigates directly to <code>status='Published'</code>. The <code>created_at</code> column in the index is ignored for this query. (EXPLAIN shows <code>ref</code> access).</p>
+
+            <h3>Case 2: Missing Leading Column (The Index Fails)</h3>
+            <pre><code class="language-sql">SELECT * FROM articles WHERE status = 'Published';</code></pre>
+            <p><strong>Execution:</strong> Because the B+Tree is sorted primarily by <code>author_id</code>, the <code>status</code> values are scattered throughout the entire tree. The Optimizer <strong>cannot</strong> use this index for direct access. It must perform a Full Table Scan (or an Index Scan if the index is covering). The index structure is practically useless for this query.</p>
+
+            <h3>Case 3: Equality + Range (The Stopping Point)</h3>
+            <pre><code class="language-sql">SELECT * FROM articles 
+WHERE author_id = 101 AND status > 'Draft' AND created_at = '2026-01-01';</code></pre>
+            <p><strong>Execution:</strong> This is a critical edge case. The Optimizer uses <code>author_id</code> for direct equality lookup. It then uses <code>status > 'Draft'</code> for range traversal within that author. However, because <code>status</code> is a range, the hierarchical sorting of the third column (<code>created_at</code>) is now broken across the multiple statuses fetched.</p>
+            <p>Therefore, the index <strong>stops being used for B+Tree searching</strong> after the <code>status</code> column. The <code>created_at</code> condition is evaluated as <em>Additional Filtering</em> (Index Condition Pushdown) as it scans the range, rather than an instant B+Tree dive.</p>
+
+            <h3>Case 4: Skipped Middle Column</h3>
+            <pre><code class="language-sql">SELECT * FROM articles 
+WHERE author_id = 101 AND created_at > '2026-01-01';</code></pre>
+            <p><strong>Execution:</strong> The Optimizer uses <code>author_id</code> to jump to the right section of the B+Tree. But because <code>status</code> was skipped, it cannot use <code>created_at</code> for the search (the dates are not sorted sequentially because the statuses are interleaved). It scans every row for <code>author_id = 101</code> and applies the date filter post-access.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="filtering-vs-access">Index Access vs Additional Filtering</h2>
+            <p>It is incorrect to say the Optimizer "ignores" later columns when the prefix is broken.</p>
+            <p>In <strong>Case 4</strong> above, modern MySQL uses <strong>Index Condition Pushdown (ICP)</strong>. Even though <code>created_at</code> cannot be used to instantly navigate the B+Tree, the Execution Engine still reads the <code>created_at</code> value from the Secondary Index leaf node. If the date doesn't match, it discards the row immediately. This saves the engine from doing a Double Lookup into the Clustered Index for a row it would eventually throw away. (EXPLAIN shows <code>Using index condition</code>).</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="interview-reasoning">Interview: What Happens Internally?</h2>
+            
+            <div class="advanced-box">
+                <span class="advanced-title">Reasoning Challenge</span>
+                <p><strong>Scenario:</strong> You have <code>INDEX(author_id, created_at)</code>.</p>
+                <p><strong>Query A:</strong> <code>SELECT * FROM articles WHERE author_id = 101 ORDER BY created_at;</code></p>
+                <p><strong>Query B:</strong> <code>SELECT * FROM articles WHERE author_id > 100 ORDER BY created_at;</code></p>
+                <p><strong>Question:</strong> How does the internal sorting execution differ radically between Query A and Query B?</p>
+                <details>
+                    <summary>View the Internal Explanation</summary>
+                    <div>
+                        <p><strong>Query A:</strong> Because <code>author_id</code> is an equality condition (<code>= 101</code>), the B+Tree guarantees that all rows under <code>author_id = 101</code> are <strong>already physically sorted</strong> by the second column, <code>created_at</code>. The Execution Engine just reads the index sequentially. No extra CPU sorting is required.</p>
+                        <p><strong>Query B:</strong> Because <code>author_id</code> is a range condition (<code>> 100</code>), the Execution Engine retrieves multiple authors (e.g., 101, 102, 103). While the dates are sorted <em>within</em> author 101, and sorted <em>within</em> author 102, the combined result set of all authors is <strong>not</strong> sorted globally by date. Therefore, the Optimizer is forced to allocate a Sort Buffer, fetch all the rows, and perform a physical QuickSort (a "filesort") on the result set before returning it.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!
+
+Wrap code in triple backticks:
+```sql
+SELECT * FROM users;
+```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    
+    <script>
+        function toggleNotes() {
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

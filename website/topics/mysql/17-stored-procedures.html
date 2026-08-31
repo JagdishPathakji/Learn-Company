@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>17. Stored Procedures (Deep Dive) - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html" class="active">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>17. Stored Procedures (Deep Dive)</h1>
+            <p class="metadata">Advanced SQL</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="sp-overview">Stored Procedure Parameters and Working</h2>
+            <p>Stored Procedures allow you to encapsulate complex business logic, multiple queries, and transaction management inside the MySQL Server. Understanding how data flows into, out of, and within a procedure requires mastering <strong>Parameters</strong> and <strong>Variables</strong>.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="parameters">Procedure Parameters (IN, OUT, INOUT)</h2>
+            <p>Parameters define the contract between the caller and the procedure.</p>
+
+            <table class="linq-table">
+                <thead>
+                    <tr>
+                        <th>Direction</th>
+                        <th>Behavior</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>IN</code> (Default)</td>
+                        <td>Passes a value <em>into</em> the procedure. The procedure can modify it internally, but the caller will not see the change.</td>
+                        <td>Providing IDs, thresholds, or search strings.</td>
+                    </tr>
+                    <tr>
+                        <td><code>OUT</code></td>
+                        <td>Passes a value <em>out</em> of the procedure. The initial value provided by the caller is ignored (set to NULL). When the procedure finishes, the final value is copied back to the caller's variable.</td>
+                        <td>Returning counts, generated IDs, or status codes.</td>
+                    </tr>
+                    <tr>
+                        <td><code>INOUT</code></td>
+                        <td>A combination. The caller passes a value in, the procedure modifies it, and the caller receives the modified value back.</td>
+                        <td>Counters, string formatting accumulators.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="execution-lifecycle">Execution Lifecycle Example</h2>
+            
+            <pre><code class="language-sql">-- Defining the Procedure
+CREATE PROCEDURE ProcessOrder(
+    IN p_order_id INT,
+    OUT p_status VARCHAR(20)
+)
+BEGIN
+    -- Local Variable Declaration
+    DECLARE v_total DECIMAL(10,2);
+    
+    -- Querying into the Local Variable
+    SELECT total_price INTO v_total
+    FROM orders WHERE id = p_order_id;
+    
+    -- Logic
+    IF v_total > 1000 THEN
+        SET p_status = 'High Value';
+    ELSE
+        SET p_status = 'Standard';
+    END IF;
+END;</code></pre>
+
+            <h3>What happens during execution?</h3>
+            <pre><code class="language-sql">CALL ProcessOrder(105, @final_status);
+SELECT @final_status;</code></pre>
+            
+            <ol>
+                <li>The caller executes <code>CALL</code>, passing the literal <code>105</code> to <code>p_order_id</code>, and binding the User Variable <code>@final_status</code> to <code>p_status</code>.</li>
+                <li>The procedure allocates memory for the Local Variable <code>v_total</code>.</li>
+                <li>The <code>SELECT ... INTO</code> statement is optimized and executed, fetching the row from the Buffer Pool, and storing the price in <code>v_total</code>.</li>
+                <li>The <code>IF</code> condition evaluates. The <code>OUT</code> parameter <code>p_status</code> is updated in the procedure's memory context.</li>
+                <li>The procedure finishes. The MySQL Server takes the value of <code>p_status</code> and explicitly copies it into the caller's session User Variable <code>@final_status</code>.</li>
+                <li>The caller runs <code>SELECT @final_status;</code> to view the result.</li>
+            </ol>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="variables-comparison">Variables Comparison</h2>
+            
+            <ul>
+                <li><strong>Local Variable (<code>DECLARE v_name INT;</code>):</strong> Strictly scoped to the <code>BEGIN...END</code> block. Dropped from memory the millisecond the procedure ends. Requires no <code>@</code> symbol.</li>
+                <li><strong>User Variable (<code>SET @v_name = 1;</code>):</strong> Scoped to the entire Client Session. It persists across multiple queries and procedure calls until the connection drops.</li>
+                <li><strong>System Variable (<code>@@global.max_connections</code>):</strong> Defines the configuration of the MySQL Server daemon itself.</li>
+            </ul>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span><span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    <script>
+        function toggleNotes() { document.getElementById('notesPanel').classList.toggle('open'); document.body.classList.toggle('notes-open'); }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes'); const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite'); const tabP = document.getElementById('tabPreview');
+            if(mode === 'preview') {
+                ta.style.display = 'none'; prev.style.display = 'block'; tabW.classList.remove('active'); tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else { ta.style.display = 'block'; prev.style.display = 'none'; tabW.classList.add('active'); tabP.classList.remove('active'); }
+        }
+        const notesTextarea = document.getElementById('personalNotes'); const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html'; const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value); saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

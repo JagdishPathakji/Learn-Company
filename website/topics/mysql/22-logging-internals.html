@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>22. Storage & Logging Internals (Deep Dive) - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html" class="active">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>22. Storage & Logging Internals (Deep Dive)</h1>
+            <p class="metadata">Admin & Internals</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="logging-overview">The Three Logs of MySQL</h2>
+            <p>To understand MySQL crash recovery, replication, and transaction isolation, you must understand the exact physical boundaries between the Undo Log, Redo Log, and Binary Log. They are NOT interchangeable.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="undo-log">1. The Undo Log</h2>
+            <p><strong>Primary Purpose:</strong> Rollback & MVCC (Multi-Version Concurrency Control).</p>
+            <ul>
+                <li><strong>What it is:</strong> When you update or delete a row, InnoDB writes the <em>previous</em> version of the row into the Undo Log before modifying the page in the Buffer Pool.</li>
+                <li><strong>Rollback:</strong> If you issue <code>ROLLBACK</code>, InnoDB reads the Undo Log and physically reverses the changes in the Buffer Pool.</li>
+                <li><strong>MVCC:</strong> If Transaction B wants to read a row that Transaction A is currently modifying, InnoDB points Transaction B to the Undo Log so it can read the old, consistent version of the row.</li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="redo-log">2. The Redo Log</h2>
+            <p><strong>Primary Purpose:</strong> Crash Recovery & Durability (The 'D' in ACID).</p>
+            <ul>
+                <li><strong>What it is:</strong> Modifying physical 16KB data pages on disk for every query is too slow. InnoDB modifies the pages in memory (Buffer Pool) and writes a fast, sequential record of the change to the Redo Log.</li>
+                <li><strong>Crash Recovery:</strong> If the server loses power, the modified pages in the Buffer Pool are lost. Upon restart, InnoDB reads the physical Redo Log, finds the changes that were never written to the <code>.ibd</code> files, and re-applies them.</li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="binlog">3. The Binary Log (Binlog)</h2>
+            <p><strong>Primary Purpose:</strong> Replication & Point-In-Time Recovery.</p>
+            <ul>
+                <li><strong>What it is:</strong> A log maintained by the <em>MySQL Server Layer</em> (not InnoDB). It records committed transactions either as the literal SQL statements (Statement-Based) or the exact row modifications (Row-Based).</li>
+                <li><strong>Replication:</strong> Replica servers connect to the Primary, download the Binlog, and execute the events to synchronize their data.</li>
+                <li><strong>Why it doesn't replace the Redo Log:</strong> The Binlog records logical events at the server level upon commit. The Redo Log records physical byte-level page changes inside the InnoDB engine continuously. Crash recovery requires physical page reconstruction, which the Binlog cannot provide.</li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="interview-reasoning">Interview: What Happens Internally?</h2>
+            
+            <div class="advanced-box">
+                <span class="advanced-title">Reasoning Challenge</span>
+                <p><strong>Question:</strong> Why can't we simply use the Binary Log for crash recovery and delete the Redo Log to save disk space?</p>
+                <details>
+                    <summary>View the Internal Explanation</summary>
+                    <div>
+                        <p>The Binary Log and Redo Log operate at completely different levels of the MySQL architecture.</p>
+                        <p>The <strong>Binary Log</strong> operates at the Server level and logs logical events (e.g., "Row 5 was updated to 'Active'") <em>only when a transaction commits</em>. If a server crashes mid-transaction, the uncommitted data isn't in the Binlog.</p>
+                        <p>The <strong>Redo Log</strong> operates at the InnoDB Storage Engine level. It logs physical byte-level modifications to the 16KB data pages in the Buffer Pool. It is written to continuously, even for uncommitted transactions. When the server restarts after a crash, InnoDB must physically reconstruct torn or dirty data pages block-by-block. The logical Binlog does not contain the physical page offsets required to reconstruct a corrupted B+Tree.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span><span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    <script>
+        function toggleNotes() { document.getElementById('notesPanel').classList.toggle('open'); document.body.classList.toggle('notes-open'); }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes'); const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite'); const tabP = document.getElementById('tabPreview');
+            if(mode === 'preview') {
+                ta.style.display = 'none'; prev.style.display = 'block'; tabW.classList.remove('active'); tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else { ta.style.display = 'block'; prev.style.display = 'none'; tabW.classList.add('active'); tabP.classList.remove('active'); }
+        }
+        const notesTextarea = document.getElementById('personalNotes'); const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html'; const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value); saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

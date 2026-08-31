@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8. Set Operations (UNION) - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html" class="active">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+
+        <div class="sidebar-category">C# Curriculum</div>
+        <ul>
+            <li><a href="../csharp/01-visual-studio-2022.html">Switch to C# Topics ➔</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>8. Set Operations (UNION)</h1>
+            <p class="metadata">MySQL Engine Internals & Querying</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="union-overview">Set Operations: UNION vs UNION ALL</h2>
+            <p>Set operations combine the result sets of two or more <code>SELECT</code> queries. While the syntax is simple, the internal execution overhead between <code>UNION</code> and <code>UNION ALL</code> is one of the most common causes of CPU spikes in poorly written applications.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="internal-differences">Internal Execution Differences</h2>
+
+            <h3>1. UNION ALL (Fast Append)</h3>
+            <pre><code class="language-sql">SELECT email FROM users
+UNION ALL
+SELECT email FROM archived_users;</code></pre>
+            <p><strong>Execution Path:</strong> The Execution Engine runs the first query and streams the rows directly to the client. It then runs the second query and appends the rows to the stream. There is virtually zero overhead. It simply concatenates the two streams.</p>
+
+            <h3>2. UNION (Implicit DISTINCT)</h3>
+            <pre><code class="language-sql">SELECT email FROM users
+UNION
+SELECT email FROM archived_users;</code></pre>
+            <p><strong>Execution Path:</strong> A standard <code>UNION</code> mathematically requires uniqueness (removing duplicates). To achieve this, the Storage Engine cannot stream the results immediately.</p>
+            <ol>
+                <li>The Execution Engine runs both queries.</li>
+                <li>It writes <em>all</em> results into an <strong>Internal Temporary Table</strong>.</li>
+                <li>It builds a unique index on this temporary table to identify and discard duplicate rows.</li>
+                <li>If the dataset is large, this temporary table exceeds memory limits and is written to physical disk.</li>
+                <li>Finally, it reads the deduplicated data from the temporary table and streams it to the client.</li>
+            </ol>
+            
+            <div class="mistake-box">
+                <span class="mistake-title">Performance Edge Case</span>
+                <p>If you know mathematically that the two queries will <em>never</em> return overlapping duplicate rows (for example, Query A gets <code>status='Active'</code> and Query B gets <code>status='Deleted'</code>), writing <code>UNION</code> is a massive performance error. Always explicitly write <code>UNION ALL</code> unless you specifically require the database to spend CPU cycles deduplicating the results.</p>
+            </div>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="interview-reasoning">Interview: What Happens Internally?</h2>
+            
+            <div class="advanced-box">
+                <span class="advanced-title">Reasoning Challenge</span>
+                <p><strong>Scenario:</strong> You execute a <code>UNION</code> between two massive tables containing 5 million rows each. The server CPU spikes to 100%, and the query takes 45 seconds. You change it to <code>UNION ALL</code> and it completes in 2 seconds.</p>
+                <p><strong>Question:</strong> What physical disk and memory structures were heavily utilized during the 45-second query that were completely bypassed in the 2-second query?</p>
+                <details>
+                    <summary>View the Internal Explanation</summary>
+                    <div>
+                        <p>During the <code>UNION</code> query, the MySQL Execution Engine had to create an <strong>Internal Temporary Table</strong> to deduplicate the 10 million combined rows. Because 10 million rows cannot fit in the standard in-memory <code>tmp_table_size</code> allocation, MySQL had to create an on-disk temporary table using the InnoDB storage engine.</p>
+                        <p>It then had to insert all 10 million rows into this physical temp file and attempt to build a unique index on them to filter duplicates. This caused immense physical Disk I/O and CPU thrashing for sorting.</p>
+                        <p>By changing to <code>UNION ALL</code>, you bypassed the temporary table and deduplication phase entirely. The Execution Engine simply executed the queries and flushed the network buffers directly to the client as the rows were read from the B+Tree, resulting in a 2-second execution.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!
+
+Wrap code in triple backticks:
+```sql
+SELECT * FROM users;
+```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    
+    <script>
+        function toggleNotes() {
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>

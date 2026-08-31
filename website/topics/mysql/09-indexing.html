@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9. Indexing & Storage Engine Internals - MySQL</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        
+        <div class="sidebar-category">MySQL Core & Schema</div>
+        <ul>
+            <li><a href="01-introduction.html">1. Intro & Architecture</a></li>
+            <li><a href="02-ddl.html">2. DDL & Constraints</a></li>
+            <li><a href="03-dml.html">3. DML & Buffer Pool</a></li>
+            <li><a href="04-querying.html">4. DQL & Execution</a></li>
+        </ul>
+
+        <div class="sidebar-category">Relational & Set Logic</div>
+        <ul>
+            <li><a href="05-joins.html">5. JOINs & Hash Joins</a></li>
+            <li><a href="06-aggregate-functions.html">6. Aggregate Functions</a></li>
+            <li><a href="07-subqueries.html">7. Subqueries</a></li>
+            <li><a href="08-set-operations.html">8. Set Operations</a></li>
+        </ul>
+
+        <div class="sidebar-category">Performance & Indexing</div>
+        <ul>
+            <li><a href="09-indexing.html" class="active">9. Indexing Internals</a></li>
+            <li><a href="10-composite-indexes.html">10. Composite Indexes</a></li>
+        </ul>
+
+        <div class="sidebar-category">Advanced SQL</div>
+        <ul>
+            <li><a href="11-functions.html">11. Functions</a></li>
+            <li><a href="12-triggers.html">12. Triggers</a></li>
+            <li><a href="13-cte.html">13. CTEs</a></li>
+            <li><a href="14-cursors.html">14. Cursors</a></li>
+            <li><a href="15-temporary-tables.html">15. Temporary Tables</a></li>
+            <li><a href="16-prepared-statements.html">16. Prepared Statements</a></li>
+            <li><a href="17-stored-procedures.html">17. Stored Procedures</a></li>
+            <li><a href="18-views.html">18. Views</a></li>
+        </ul>
+
+        <div class="sidebar-category">Admin & Internals</div>
+        <ul>
+            <li><a href="19-backup-restore.html">19. Backup & Restore</a></li>
+            <li><a href="20-single-transaction-dump.html">20. Single-Transaction Dump</a></li>
+            <li><a href="21-character-set-collation.html">21. Charset & Collation</a></li>
+            <li><a href="22-logging-internals.html">22. Logging Internals</a></li>
+            <li><a href="23-transactions.html">23. Transactions & MVCC</a></li>
+            <li><a href="24-explain-optimization.html">24. EXPLAIN & Tuning</a></li>
+            <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
+        </ul>
+
+        <div class="sidebar-category">C# Curriculum</div>
+        <ul>
+            <li><a href="../csharp/01-visual-studio-2022.html">Switch to C# Topics ➔</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>9. Indexing & Storage Engine Internals</h1>
+            <p class="metadata">Performance & Indexing</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="indexing-overview">Indexing in InnoDB</h2>
+            <p>At the SQL level, an index is just a rule you add to a column to "make queries faster". But at the <strong>InnoDB Storage Engine</strong> level, an index is a physical, hierarchical data structure written to disk (in 16KB pages) that completely dictates how your data is physically organized.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="clustered-vs-secondary">Clustered Index vs Secondary Index</h2>
+            <p>This is the most critical distinction in InnoDB storage architecture.</p>
+
+            <h3>The Clustered Index (The Primary Key)</h3>
+            <p>In InnoDB, the table data is not stored in a random heap. The table data <strong>IS</strong> the Primary Key index. This structure is called the Clustered Index.</p>
+            <ul>
+                <li>It is a B+Tree.</li>
+                <li>The non-leaf nodes contain the Primary Key values (to guide the search).</li>
+                <li>The leaf nodes contain the <strong>actual physical row data</strong> for every column.</li>
+            </ul>
+
+            <h3>The Secondary Index (Non-Primary Indexes)</h3>
+            <p>If you create an index on the <code>email</code> column, InnoDB builds a separate B+Tree for <code>email</code>.</p>
+            <ul>
+                <li>The non-leaf nodes contain the email values.</li>
+                <li>The leaf nodes <strong>DO NOT</strong> contain the row data. Instead, they contain the <strong>Primary Key value</strong> of that row.</li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="index-lookup">The Execution Path: Double Lookup (Key Lookup)</h2>
+            <p>What happens when you run this query?</p>
+            <pre><code class="language-sql">SELECT first_name, last_name FROM users WHERE email = 'test@example.com';</code></pre>
+            
+            <p>Because the query filters by <code>email</code> (a Secondary Index), but requests <code>first_name</code> and <code>last_name</code> (which are not in the email index), the Execution Engine must perform a <strong>Double Lookup</strong>:</p>
+            <ol>
+                <li>It traverses the Secondary Index (email) B+Tree to find 'test@example.com'.</li>
+                <li>It extracts the Primary Key value (e.g., <code>id = 105</code>) from the leaf node.</li>
+                <li>It takes <code>id = 105</code> and navigates down the Clustered Index B+Tree.</li>
+                <li>It reaches the Clustered Index leaf node, retrieves the full row data, extracts <code>first_name</code> and <code>last_name</code>, and returns them.</li>
+            </ol>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="covering-index">Covering Indexes: Bypassing the Clustered Index</h2>
+            <p>A "Covering Index" is not a special type of index; it is a <strong>state of execution</strong> where the query's requested columns are completely "covered" by the secondary index structure.</p>
+            
+            <pre><code class="language-sql">-- Query 1 (Requires double lookup)
+SELECT id, email, first_name FROM users WHERE email = 'test@example.com';
+
+-- Query 2 (Covering Index)
+SELECT id, email FROM users WHERE email = 'test@example.com';</code></pre>
+            
+            <p>In Query 2, because the Secondary Index leaf node contains the <code>email</code> and the Primary Key (<code>id</code>), the Execution Engine <strong>never queries the Clustered Index</strong>. It extracts the <code>id</code> directly from the Secondary Index and returns. This eliminates 50% of the Disk I/O overhead. (In <code>EXPLAIN</code>, this appears as <strong>Using index</strong>).</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 id="interview-reasoning">Interview: What Happens Internally?</h2>
+            
+            <div class="advanced-box">
+                <span class="advanced-title">Reasoning Challenge</span>
+                <p><strong>Scenario:</strong> You have a table with 10 million rows. You add a Secondary Index on a boolean column <code>is_active</code>. However, when you run <code>EXPLAIN SELECT * FROM users WHERE is_active = 1;</code>, the Optimizer chooses a Full Table Scan (ALL) instead of using your new index.</p>
+                <p><strong>Question:</strong> Why did the Optimizer completely ignore your index?</p>
+                <details>
+                    <summary>View the Internal Explanation</summary>
+                    <div>
+                        <p>The Optimizer ignored the index due to <strong>Low Selectivity (Low Cardinality)</strong> combined with the cost of the <strong>Double Lookup</strong>.</p>
+                        <p>Because <code>is_active</code> is a boolean, assume 80% of your users are active. If the Optimizer used the index, it would have to find 8 million <code>is_active=1</code> entries in the Secondary Index, and then perform 8 million separate B+Tree traverses into the Clustered Index to retrieve the <code>SELECT *</code> data.</p>
+                        <p>Because secondary index lookups cause <em>Random Disk I/O</em>, executing 8 million random lookups would be catastrophic for the physical disk and the Buffer Pool. The Optimizer's cost-model correctly calculated that ignoring the index and simply reading the Clustered Index sequentially from start to finish (a Full Table Scan using <em>Sequential Disk I/O</em>) is drastically cheaper and faster.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+    </main>
+    
+    <script src="../../js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!
+
+Wrap code in triple backticks:
+```sql
+SELECT * FROM users;
+```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+    
+    <script>
+        function toggleNotes() {
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                if (typeof marked !== 'undefined') { prev.innerHTML = marked.parse(ta.value); } 
+                if (window.Prism) { Prism.highlightAllUnder(prev); }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        let fileName = window.location.pathname.split('/').pop() || 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        if(localStorage.getItem(pageKey)) { notesTextarea.value = localStorage.getItem(pageKey); }
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+    <script src="../../js/ui-enhancements.js"></script>
+
+</body>
+</html>
