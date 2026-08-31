@@ -10,8 +10,14 @@
 <body>
     
     <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    
     <aside class="sidebar">
         <h2>Knowledge Base</h2>
+        <div class="tech-switcher">
+            <a href="../../index.html?tech=csharp" class="tech-btn">C# .NET</a>
+            <a href="../../index.html?tech=mysql" class="tech-btn active">MySQL</a>
+        </div>
+
         
         <div class="sidebar-category">MySQL Core & Schema</div>
         <ul>
@@ -58,10 +64,7 @@
             <li><a href="25-internals-map.html">25. Final Internals Map</a></li>
         </ul>
 
-        <div class="sidebar-category">C# Curriculum</div>
-        <ul>
-            <li><a href="../csharp/01-visual-studio-2022.html">Switch to C# Topics ➔</a></li>
-        </ul>
+        
     </aside>
 
     <main class="main-content">
