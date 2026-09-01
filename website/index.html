@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Knowledge Base - Dashboard</title>
+    <link rel="stylesheet" href="css/global.css">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    
+    
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        
+
+        
+            <div class="sidebar-category">C# Training</div>
+            <ul>
+                <li><a href="topics/csharp/01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+                <li><a href="topics/csharp/02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+                <li><a href="topics/csharp/03-csharp-dotnet-history.html">3. C# Fundamentals - Intro</a></li>
+                <li><a href="topics/csharp/04-scope-and-accessibility.html">4. Scope & Accessibility</a></li>
+                <li><a href="topics/csharp/05-namespace-and-libraries.html">5. Namespace & Libraries</a></li>
+                <li><a href="topics/csharp/06-enumerations.html">6. Enumerations (Enums)</a></li>
+                <li><a href="topics/csharp/07-datatable.html">7. DataTable</a></li>
+                <li><a href="topics/csharp/08-date-string-math.html">8. Date/String/Math</a></li>
+                <li><a href="topics/csharp/09-file-operations.html">9. File Operations</a></li>
+                <li><a href="topics/csharp/10-advanced-types.html">10. Types (AEIP)</a></li>
+                <li><a href="topics/csharp/11-generics.html">11. Generics</a></li>
+                <li><a href="topics/csharp/12-file-system.html">12. File System</a></li>
+                <li><a href="topics/csharp/13-lambda-expressions.html">13. Lambda Expressions</a></li>
+                <li><a href="topics/csharp/14-extension-methods.html">14. Extension Methods</a></li>
+                <li><a href="topics/csharp/15-linq.html">15. LINQ</a></li>
+            </ul>
+        </div>
+
+        </aside>
+
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>C# & .NET Engineering Knowledge Base</h1>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; margin-top: 10px;">A comprehensive, premium reference guide for professional C# development.</p>
+        </div>
+
+        <div class="callout callout-info" style="margin-bottom: 40px;">
+            <span class="callout-title">How to use this documentation</span>
+            <p style="margin-bottom: 0;">This knowledge base is designed like a premium technical textbook. Use the sidebar to navigate chronologically through the curriculum, or use the Table of Contents on any page to jump to specific concepts. Use the <strong>Personal Notes</strong> panel in the bottom right to draft Markdown notes that save automatically to your browser.</p>
+        </div>
+
+        
+        
+
+        
+
+        
+        <div class="concept-block">
+            <h3 class="concept-title">Module 1: Core Fundamentals</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/csharp/01-visual-studio-2022.html">Visual Studio 2022 & Environment Setup</a></li>
+                <li><a href="topics/csharp/02-programming-guidelines.html">Programming Guidelines & Commenting</a></li>
+                <li><a href="topics/csharp/03-csharp-dotnet-history.html">C# Fundamentals - Introduction</a></li>
+                <li><a href="topics/csharp/04-scope-and-accessibility.html">Scope & Accessibility Modifiers</a></li>
+                <li><a href="topics/csharp/05-namespace-and-libraries.html">Namespaces & Libraries</a></li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h3 class="concept-title">Module 2: Data Structures & Types</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/csharp/06-enumerations.html">Enumerations (Enums)</a></li>
+                <li><a href="topics/csharp/07-datatable.html">DataTables & DataSets</a></li>
+                <li><a href="topics/csharp/08-date-string-math.html">Dates, Strings, and Math Operations</a></li>
+                <li><a href="topics/csharp/10-advanced-types.html">Advanced Types (Anonymous, Dynamic, Tuples)</a></li>
+                <li><a href="topics/csharp/11-generics.html">Generics & Type Constraints</a></li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h3 class="concept-title">Module 3: I/O & Functional C#</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/csharp/09-file-operations.html">Basic File Operations</a></li>
+                <li><a href="topics/csharp/12-file-system.html">Advanced File System & Streams</a></li>
+                <li><a href="topics/csharp/13-lambda-expressions.html">Lambda Expressions & Delegates</a></li>
+                <li><a href="topics/csharp/14-extension-methods.html">Extension Methods</a></li>
+                <li><a href="topics/csharp/15-linq.html">LINQ (Language Integrated Query)</a></li>
+            </ul>
+        </div>
+
+        <div class="concept-block">
+            <h3 class="concept-title">Custom Deep Dives</h3>
+            <ul style="list-style-type: square; color: var(--text-muted);">
+                <li><a href="topics/csharp/custom-01-top-level-statements.html">Top-Level Statements vs Traditional Main()</a></li>
+            </ul>
+        </div>
+    
+        
+
+        
+    </main>
+
+    <script src="js/app.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+
+    <!-- Personal Notes Panel -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <button class="notes-toggle-btn" onclick="toggleNotes()">📝 My Notes</button>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-header">
+            <span>Personal Notes</span>
+            <span class="notes-close" onclick="toggleNotes()">&times;</span>
+        </div>
+        <div class="notes-tabs">
+            <button id="tabWrite" class="notes-tab active" onclick="switchNoteTab('write')">Write</button>
+            <button id="tabPreview" class="notes-tab" onclick="switchNoteTab('preview')">Preview (Markdown)</button>
+        </div>
+        <textarea class="notes-textarea" id="personalNotes" placeholder="Supports Markdown!&#10;&#10;Wrap code in triple backticks like this:&#10;```csharp&#10;int x = 5;&#10;```"></textarea>
+        <div class="notes-preview" id="notesPreview"></div>
+        <div class="notes-save-status" id="saveStatus">Auto-saved!</div>
+    </div>
+
+    <script>
+        function toggleNotes() {
+            if (window.hasDragged) { window.hasDragged = false; return; }
+            document.getElementById('notesPanel').classList.toggle('open');
+            document.body.classList.toggle('notes-open');
+        }
+        
+        function switchNoteTab(mode) {
+            const ta = document.getElementById('personalNotes');
+            const prev = document.getElementById('notesPreview');
+            const tabW = document.getElementById('tabWrite');
+            const tabP = document.getElementById('tabPreview');
+            
+            if(mode === 'preview') {
+                ta.style.display = 'none';
+                prev.style.display = 'block';
+                tabW.classList.remove('active');
+                tabP.classList.add('active');
+                
+                // Parse markdown to HTML
+                prev.innerHTML = marked.parse(ta.value);
+                
+                // Apply Prism.js syntax highlighting to the newly parsed code blocks!
+                if (window.Prism) {
+                    Prism.highlightAllUnder(prev);
+                }
+            } else {
+                ta.style.display = 'block';
+                prev.style.display = 'none';
+                tabW.classList.add('active');
+                tabP.classList.remove('active');
+            }
+        }
+
+        // Auto-save logic
+        const notesTextarea = document.getElementById('personalNotes');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        let fileName = window.location.pathname.split('/').pop();
+        if (!fileName) fileName = 'index.html';
+        const pageKey = 'kb_notes_' + fileName;
+        
+        if(localStorage.getItem(pageKey)) {
+            notesTextarea.value = localStorage.getItem(pageKey);
+        }
+
+        let saveTimeout = null;
+        notesTextarea.addEventListener('input', function() {
+            localStorage.setItem(pageKey, notesTextarea.value);
+            saveStatus.style.opacity = 1;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => { saveStatus.style.opacity = 0; }, 1000);
+        });
+    </script>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('kb_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+        // Persist sidebar state across page loads
+        if(localStorage.getItem('kb_sidebar_collapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+
+
+    <!-- Draggable Notes Button Script -->
+    <script>
+        const dragBtn = document.querySelector('.notes-toggle-btn');
+        let isDragging = false;
+        window.hasDragged = false; // Global flag to prevent click after drag
+        let offsetX, offsetY;
+
+        // Load saved position from localStorage
+        const savedX = localStorage.getItem('kb_notes_btn_x');
+        const savedY = localStorage.getItem('kb_notes_btn_y');
+        if (savedX && savedY) {
+            dragBtn.style.left = savedX + 'px';
+            dragBtn.style.top = savedY + 'px';
+            dragBtn.style.bottom = 'auto'; // override default CSS bottom
+            dragBtn.style.right = 'auto';  // override default CSS right
+        }
+
+        dragBtn.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            window.hasDragged = false; // Reset drag flag
+            offsetX = e.clientX - dragBtn.getBoundingClientRect().left;
+            offsetY = e.clientY - dragBtn.getBoundingClientRect().top;
+            dragBtn.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            window.hasDragged = true; // User is moving the mouse, so it's a drag
+            
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+            
+            // Prevent dragging off screen
+            newX = Math.max(0, Math.min(newX, window.innerWidth - dragBtn.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - dragBtn.offsetHeight));
+
+            dragBtn.style.left = newX + 'px';
+            dragBtn.style.top = newY + 'px';
+            dragBtn.style.bottom = 'auto';
+            dragBtn.style.right = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                dragBtn.style.cursor = 'grab';
+                // Save position for next page load
+                localStorage.setItem('kb_notes_btn_x', dragBtn.style.left.replace('px', ''));
+                localStorage.setItem('kb_notes_btn_y', dragBtn.style.top.replace('px', ''));
+            }
+        });
+    </script>
+
+
+    
+
+    
+
+</body>
+
+</html>
