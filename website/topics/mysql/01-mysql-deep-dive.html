@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MySQL Deep Dive</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar">
+        <h2>Knowledge Base</h2>
+        <div class="sidebar-category">C# Training</div>
+        <ul>
+            <li><a href="../csharp/01-visual-studio-2022.html">1. VS 2022 Overview</a></li>
+            <li><a href="../csharp/02-programming-guidelines.html">2. Guidelines & Commenting</a></li>
+            <li><a href="../csharp/03-csharp-dotnet-history.html">3. C# Fundamentals - Intro</a></li>
+            <li><a href="../csharp/04-scope-and-accessibility.html">4. Scope & Accessibility</a></li>
+            <li><a href="../csharp/05-namespace-and-libraries.html">5. Namespace & Libraries</a></li>
+            <li><a href="../csharp/06-enumerations.html">6. Enumerations (Enums)</a></li>
+            <li><a href="../csharp/07-datatable.html">7. DataTable</a></li>
+            <li><a href="../csharp/08-date-string-math.html">8. Date/String/Math</a></li>
+            <li><a href="../csharp/09-file-operations.html">9. File Operations</a></li>
+            <li><a href="../csharp/10-advanced-types.html">10. Types (AEIP)</a></li>
+            <li><a href="../csharp/11-generics.html">11. Generics</a></li>
+            <li><a href="../csharp/12-file-system.html">12. File System</a></li>
+            <li><a href="../csharp/13-lambda-expressions.html">13. Lambda Expressions</a></li>
+            <li><a href="../csharp/14-extension-methods.html">14. Extension Methods</a></li>
+            <li><a href="../csharp/15-linq.html">15. LINQ</a></li>
+            <li><a href="../csharp/custom-01-top-level-statements.html">Top-Level Statements</a></li>
+        </ul>
+        <div class="sidebar-category">MySQL Training</div>
+        <ul>
+            <li><a href="01-mysql-deep-dive.html" class="active">MySQL Deep Dive</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="topic-header">
+            <h1>MySQL Deep Dive</h1>
+        </div>
+
+        <div class="concept-block">
+            <p>InnoDB is the default, general-purpose storage engine for MySQL and MariaDB. While SQL defines how you write queries, the storage engine is the underlying software component that actually handles the physical storing, updating, and retrieving of data on the disk.InnoDB is famous because it is the engine that brings ACID compliance to MySQL.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">UNDERSTANDING EXECUTION ORDER OF SQL QUERY</h2>
+            <hr>
+            <p><strong>SQL we write :-</strong><br>
+            SELECT - FROM - JOIN - ON - WHERE - GROUP BY - HAVING - ORDER BY - LIMIT</p>
+
+            <p><strong>Logical Meaning :-</strong><br>
+            FROM - JOIN - ON - WHERE - GROUP BY - HAVING - SELECT - ORDER BY - LIMIT</p>
+            <hr>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">SQL JOINs - INTERNAL WORKING</h2>
+            <hr>
+            <p>A JOIN combines rows from two relations based on a condition.</p>
+            
+            <p>Consider the following Tables :-</p>
+<pre><code>articles
+=========================
+id	title	author_id
+---------------------
+101 | C# Basics | 1
+102 | SQL Joins | 1
+103 | Docker    | 2
+
+users
+============
+u_id	name
+-------------
+1   | Jagdish
+2   | Rahul
+3   | Priya</code></pre>
+
+<pre><code class="language-sql">Query
+================
+SELECT *
+FROM articles a
+JOIN users u
+ON a.author_id = u.user_id;</code></pre>
+
+            <p><strong>Concept :-</strong></p>
+            <ol>
+                <li>Take one row from articles</li>
+                <li>Read its author_id</li>
+                <li>Find row(s) in users where user_id matches</li>
+                <li>Combine both rows into one result row</li>
+                <li>Repeat for next article</li>
+            </ol>
+            <hr>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">SQL USER DEFINED FUNCTION</h2>
+            <hr>
+            <p>A USER DEFINED function is a function that you create in the database to encapsulate reusable logic.</p>
+            <ol>
+                <li>Executes inside the database server</li>
+                <li>Must return a value</li>
+                <li>Can be used inside expressions such as SELECT, WHERE, etc</li>
+                <li>RETURNS defines the return type; RETURN supplies the value</li>
+                <li>DETERMINISTIC describes whether the same input reliably produces the same result</li>
+                <li>Can read data, but stored functions have restrictions on modifying data and other operations (INSERT, UPDATE, DELETE not allowed)</li>
+                <li>Functions called per row can become a major performance problem</li>
+                <li>Function cannot return a TABLE</li>
+                <li>NON DETERMINISTIS does not give same output for same input</li>
+                <li>READS SQL DATA means function reads data from tables</li>
+                <li>CONTAINS SQL means contains SQL statement</li>
+                <li>NO SQL contains no SQL statement</li>
+            </ol>
+            <hr>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">SQL STORED PROCEDURE</h2>
+            <hr>
+            <ol>
+                <li>A stored procedure is a named program stored inside the MySQL database.</li>
+                <li>CALL procedure_name(agruments)</li>
+                <li>Paramaters :- IN (input only), OUT (output only), INOUT (input + output) [IN is the default if no mode is specified]</li>
+                <li>IN Parameter
+                    <ul>
+                        <li>caller provides a value</li>
+                        <li>procedure can read it</li>
+                    </ul>
+                </li>
+                <li>OUT Parameter
+                    <ul>
+                        <li>Procedure puts a value into the parameter</li>
+                        <li>Caller retrieves that value using a variable</li>
+                    </ul>
+                </li>
+                <li>INOUT Parameter
+                    <ul>
+                        <li>Caller supplies initial value</li>
+                        <li>Procedure can read and modify it</li>
+                        <li>Modified value is available to the caller</li>
+                    </ul>
+                </li>
+                <li>Procedure does not have RETURNS it can communicate results through:
+                    <ul>
+                        <li>SELECT (output multiple rows) and multiple SELECT allowed</li>
+                        <li>OUT parameters</li>
+                        <li>INOUT parameters</li>
+                    </ul>
+                </li>
+                <li>Procedures can perform data modification (INSERT, UPDATE, DELETE)</li>
+                <li>SIGNAL allows you to raise an error</li>
+                <li>Procedure can call another procedure</li>
+                <li>Procedure can call functions</li>
+                <li>Functions cannot call procedure</li>
+            </ol>
+            <p>Example:-</p>
+<pre><code class="language-sql">CREATE PROCEDURE sp_ArticleStats(
+    IN articleId INT,
+    OUT title VARCHAR(255),
+    INOUT views INT
+)
+BEGIN
+    -- IN: read the value supplied by caller
+    SELECT article_title
+    INTO title
+    FROM articles
+    WHERE article_id = articleId;
+
+    -- INOUT: read the supplied value and modify it
+    SET views = views + 1;
+END;
+
+SET @views = 10;
+
+CALL sp_ArticleStats(
+    101,       -- IN
+    @title,    -- OUT
+    @views     -- INOUT
+);
+
+SELECT @title, @views;</code></pre>
+            <hr>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">INDEXING</h2>
+            <hr>
+            <ol>
+                <li>Without an index, MySQL scan entire table until required row is found (O(n))</li>
+                <li>An index is a separate data structure maintained by the database to locate rows efficiently</li>
+                <li>MySQL storage engine, indexes are based on B-tree/B+tree structure</li>
+                <li>PRIMARY KEY -- MySQL engine creates a Clustered index on PRIMARY KEY. The leaf pages of the clustered index contain the actual table row data. It is called clustered because table's actual records are organized (according to the primary key).</li>
+            </ol>
+<pre><code>             Primary Index
+                  │
+             [B+Tree nodes]
+                  │
+        ┌─────────┴─────────┐
+        ↓  	                 ↓
+      leaf page            leaf page
+   ┌─────────────┐       ┌─────────────┐
+   │ id=1           │       │ id=500         │
+   │ name=...       │       │ name=...       │
+   │ other data     │       │ other data     │
+   └─────────────┘       └─────────────┘</code></pre>
+            <ol start="5">
+                <li>If there is no primary key, MySQL engine still needs clustered index. It chooses this order:
+                    <ul>
+                        <li>PRIMARY KEY</li>
+                        <li>first suitable UNIQUE NOT NULL index</li>
+                        <li>Internal hidden 6-byte row ID</li>
+                    </ul>
+                </li>
+                <li>UNIQUE KEY -- If table has both PRIMARY KEY and UNIQUE KEY, The UNIQUE KEY does not form clustered index. It forms secondary index which stores the primary key.</li>
+            </ol>
+            <p>Example:-</p>
+<pre><code>email                         primary key
+------------------------------------------------
+a@example.com                 → 17
+jagdish@example.com           → 42
+rahul@example.com             → 73</code></pre>
+            <p>When we search by email :- use email index to find email -> get primary key -> search clustered index using primary key -> retrives actual row</p>
+            <ol start="6">
+                <li>COMPOSITE KEY -- There is one index containing two columns. [also mapped with primary key same as normal indexing]<br>
+                Consider:- (author_id, status_id)<br>
+                Conceptually index is sorted by author_id first and status_id as second. <br><br>
+                This COMPOSITE INDEXING works on search by
+                <ul>
+                    <li>author_id</li>
+                    <li>author_id and status_id</li>
+                </ul>
+                but does not work for
+                <ul>
+                    <li>status_id only</li>
+                </ul>
+                because indexing is sorted based on author_id first which helps in B-Tree traversal while searching</li>
+                
+                <li>COMPOSITE PRIMARY KEY -- PRIMARY KEY(article_id, version_number)<br>
+                Now the clustered index is order by:- article_id first and version_number as second.</li>
+                
+                <li>FULLTEXT INDEX -- <br>
+                MySQL builds table like this:
+<pre><code>Word          → Articles containing it
+────────────────────────────────────
+mysql         → 101, 105, 120
+database      → 101, 102, 120
+index         → 102, 105
+csharp        → 101, 110</code></pre>
+                </li>
+            </ol>
+            <hr>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">TRANSCATION MANAGEMENT</h2>
+            <hr>
+            
+            <h3>PART 1 -- TRANSACTION BASICS</h3>
+            <p>1. What is a transaction ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-<br>
+            A transaction is a group of database operations that MySQL treats as one unit of work.</p>
+            <p>Example:</p>
+<pre><code class="language-sql">START TRANSACTION;
+
+UPDATE accounts
+SET balance = balance - 1000
+WHERE account_id = 1;
+
+UPDATE accounts
+SET balance = balance + 1000
+WHERE account_id = 2;
+
+COMMIT;</code></pre>
+            <p>The two UPDATEs together represent one logical operation.</p>
+
+            <p>2. AutoCommit<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-<br>
+            By default, MySQL normally operates with <code>autocommit = 1</code>.<br>
+            Each individual statement is automatically committed when it successfully finishes.<br>
+            Inside a transaction, <code>autocommit</code> is always false.</p>
+
+            <p>3. START TRANSACTION<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-<br>
+            Start an explicit transaction. The following operations belong to this transaction until it ends.</p>
+
+            <p>4. COMMIT<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-<br>
+            COMMIT tells MySQL that the transaction has successfully completed and its changes should be permanently accepted. Transaction locks are released.</p>
+
+            <p>5. ROLLBACK<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-<br>
+            Abandon the transaction's changes and return the database to the appropriate state before that transaction's changes. Transaction locks are released.</p>
+
+            <p>6. What if one statement in TRANSACTION fails ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-<br>
+            A statement error does not automatically mean the entire transaction has been rolled back. We decide whether to ROLLBACK or COMMIT in such scenarios.</p>
+
+            <p>7. Scenario Typical view<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-</p>
+<pre><code>                     START
+                       │
+                       ↓
+                     ACTIVE
+                       │
+          ┌────────────────────┐
+          │                         │
+      operations              operations
+          │                        │
+          └─────────┬──────────┘
+                      │
+             ┌──────┴──────┐
+             │                │
+          COMMIT           ROLLBACK
+             │                │
+             ↓                ↓
+         COMMITTED         ABORTED
+             │                │
+             └──────┬──────┘
+                      ↓
+                     END</code></pre>
+
+            <br>
+            <h3>PART 2 -- WHAT HAPPENS INSIDE InnoDB</h3>
+            <ol>
+                <li>Client sends UPDATE to MySQL.</li>
+                <li>MySQL parses the SQL.</li>
+                <li>MySQL validates table, columns, syntax, permissions, etc.</li>
+                <li>Optimizer decides how to find the target row, usually using an index if available.</li>
+                <li>MySQL passes the storage work to InnoDB.</li>
+                <li>InnoDB locates the page containing the target record.<br>
+                -- If the page is already in the Buffer Pool, InnoDB uses it from memory.<br>
+                -- If the page is not in the Buffer Pool, InnoDB reads that page from disk into the Buffer Pool.</li>
+                <li>InnoDB finds the target record inside that page.</li>
+                <li>InnoDB performs the transactional work required for the change:<br>
+                -- acquires required locks<br>
+                -- creates undo information<br>
+                -- creates redo information</li>
+                <li>InnoDB modifies the record in the Buffer Pool.</li>
+                <li>The modified page becomes a dirty page. [disk and buffer has different data]</li>
+                <li>The transaction remains active until COMMIT or ROLLBACK.<br>
+                -- On COMMIT:<br>
+                i. transaction is finalized<br>
+                ii. required redo durability is handled<br>
+                iii. transaction becomes committed<br>
+                iv. transaction locks are released<br>
+                v. dirty pages do not necessarily need to be written to the data file immediately<br>
+                vi. Later, dirty pages are flushed from the Buffer Pool to disk.<br>
+                -- On ROLLBACK instead:<br>
+                i. InnoDB uses undo information to reverse the transaction's changes<br>
+                ii. transaction ends<br>
+                iii. transaction locks are released.</li>
+            </ol>
+
+            <br>
+            <h3>PART 3 -- UNDO LOG</h3>
+            <p>Consider a transaction with UPDATE queries. After some query, we do ROLLBACK due to some reasons. So InnoDB needs to restore and preserve information about the previous state. That is the basic purpose of Undo.</p>
+            <p>"Undo records contain information that allows InnoDB to reverse transaction changes and importantly help reconstruct older row versions"</p>
+            <p>Undo is not simply a backup copy of the entire row. Instead, InnoDB maintains undo records describing transactional changes. During ROLLBACK, use undo information and restore previous state. InnoDB does not delete the undo information immediately after COMMIT.</p>
+
+            <p>Why can't InnoDB delete undo immediately after COMMIT ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            Because an older transaction may still need it.</p>
+<pre><code>T1                         T2
+│                          │
+│                          START
+│                          │
+│ UPDATE 10000 → 7000      │
+│                          │
+│ COMMIT                   │
+│                          │
+│                          │ SELECT
+│                          │
+│                          ↓
+│                    may need older version</code></pre>
+            <p>If T2's consistent read requires the older version, InnoDB may need Undo information to reconstruct it. Undo details are eventually purged.</p>
+            <p>Purge<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            Eventually, when old Undo information is no longer required by any transaction, InnoDB can clean it up. This process is called purging.<br>
+            Long-running transactions can cause Undo/history to grow and can delay purge.</p>
+
+            <br>
+            <h3>PART 3 -- REDO LOG + WAL</h3>
+            <p>When we update some value using transaction, InnoDB modifies the page in memory. (initial balance = 10000)<br>
+            -- Buffer Pool : balance = 9000<br>
+            -- Disk : balance = 10000<br>
+            The buffer pool page is now dirty.</p>
+            
+            <p>What happens if the server suddenly crashes before that dirty page gets written to disk (RAM is lost as server crash) ? If we have no recovery mechanism, 9000 is LOST forever and disk still contains 10000. So we need a mechanism that records enough information to reconstruct the changes. That is the purpose of the REDO LOG.</p>
+            <p>"The REDO LOG records information about the changes made to InnoDB data pages so those changes can be reapplied during crash recovery."</p>
+            <p>Data Change --> REDO LOG --> "this changes needs to be reproducible".<br>
+            The Redo Log contains information sufficient for InnoDB to redo the required page modification.</p>
+
+            <p>Why not just write the data page immediately ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            Suppose every update did:<br>
+            1. UPDATE<br>
+            2. Modify Buffer Pool<br>
+            3. Write entire page to disk immediately (one page contain many records, while we may work only with one of them)<br>
+            Thus, Redo provides a much more efficient recovery mechanism.<br><br>
+            The Buffer Pool is where InnoDB works with pages.<br>
+            The Redo Log provides the information required to recover page modifications.</p>
+
+            <p>What happens during UPDATE ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            1. Find the page<br>
+            2. Page enters the buffer pool<br>
+            3. Generate Redo information<br>
+            4. Modify buffer pool page<br>
+            5. Page becomes dirty</p>
+
+            <p>Why is Redo called "Redo" ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            "This change has been recorded, but the corresponding data page may not have reached disk. Apply the change again."</p>
+
+            <p>WAL (Write-Ahead Logging)<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            Redo Log introduced the concept of WAL.<br><br>
+            Before a modified data page is written to disk, its corresponding log record must already be safely stored.<br>
+            1. A transaction changes some data in memory.<br>
+            2. The database creates a log record describing that change.<br>
+            3. The log record is persisted safely.<br>
+            4. Only then can the modified data page be written to disk.<br>
+            The log goes ahead of the data page.</p>
+
+            <p>-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            COMMIT does not mean data page immediately written<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x</p>
+
+            <p>What if crash happens BEFORE COMMIT?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            It determines which transaction changes need to be recovered and which uncommitted work must ultimately be undone.<br>
+            1. redo required page changes<br>
+            2. undo changes belonging to uncommitted transactions<br>
+            This is where Redo and Undo work together.</p>
+
+            <p>What if crash happens AFTER COMMIT?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            Recovery sees the durable redo information and knows the committed change needs to be reflected in the database state.</p>
+
+            <p>Log Sequence Number<br>
+            -x-x-x-x-x-x-x-x-x-x-x<br>
+            A Log Sequence Number identifies the position of redo information in the redo log stream.</p>
+<pre><code>Redo Log
+LSN 100 → change A
+LSN 120 → change B
+LSN 145 → change C
+LSN 170 → change D</code></pre>
+            <p>Pages also contain information related to the latest redo position reflected in them.<br><br>
+            Page 42<br>
+            page LSN = 145<br><br>
+            During recovery, InnoDB can determine which redo records need to be applied to a page.<br><br>
+            For example:<br>
+            Page LSN = 145<br><br>
+            Redo:<br>
+            LSN 100<br>
+            LSN 120<br>
+            LSN 145<br>
+            LSN 170<br>
+            LSN 190<br><br>
+            The page already reflects changes through 145.<br>
+            So recovery can apply the relevant later changes:<br>
+            170<br>
+            190</p>
+
+            <p>Checkpoints<br>
+            -x-x-x-x-x-x-x-x-x-x<br>
+            Imagine server has been running for days. Redo logs become very large. We dont need to keep every redo record forever. Eventually InnoDB flushes dirty pages to disk and establishes a `checkpoint` representing how far recovery-relevant changes have been persisted. The logs before that checkpoint are no longer needed.</p>
+
+            <p>Redo vs Buffer Pool<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x<br>
+            Buffer Pool : contains database pages and allows InnoDB to work efficiently in memory.<br>
+            Redo Log : contains information about modifications needed for recovery.</p>
+
+            <br>
+            <h3>PART 4 -- OVERVIEW</h3>
+            <ol>
+                <li>UPDATE QUERY</li>
+                <li>FIND PAGE</li>
+                <li>LOAD PAGE INTO BUFFER POOL</li>
+                <li>GENERATE UNDO</li>
+                <li>GENERATE REDO</li>
+                <li>MODIFY BUFFER POOL PAGE</li>
+                <li>PAGE BECOMES DIRTY</li>
+                <li>COMMIT</li>
+                <li>TRANSACTION COMMIT</li>
+                <li>LOCKS EVENTUALLY RELEASES AS TRANSACTION ENDS</li>
+                <li>DIRTY PAGE CAN BE FLUSHED LATER</li>
+            </ol>
+
+            <br>
+            <h3>PART 5 -- ACID</h3>
+            <p>Atomicity ("All or Nothing")<br>
+            Consistency (bring the database from one valid state to another)<br>
+            Isolation (concurrently running transactions do not interfere with one another)<br>
+            Durability (guarantees that once a transaction is committed, its changes are permanently saved)</p>
+
+            <br>
+            <h3>PART 6 -- LOCKS</h3>
+            <p>Suppose two transactions modify the same row. Without concurrency control, both could modify the same data unpredictably. So InnoDB uses locks to control conflicting operations.</p>
+            <p>When T1 modifies the row, X LOCK is acquired. If T2 tries to update, it has to WAIT until T1 commits and releases LOCK.</p>
+            <p>InnoDB can lock records/index entries and ranges of index entries, not just entire tables. This provides better concurrency as other transaction can work on different rows at same time.</p>
+            <p>Two basic lock types<br>
+            ---------------------<br>
+            1. Shared Lock - S<br>
+            Used when a transaction wants to read. Multiple transactions can generally hold compatible shared locks simultaneously.<br><br>
+            2. Exclusive - X<br>
+            Used when a transaction needs to modify a record. Only one transaction at a time can hold X LOCK on same resource.<br><br>
+            COMMIT or ROLLBACK releases the transaction locks.</p>
+
+            <br>
+            <h3>PART 7 -- MVCC Basics</h3>
+            <p>MVCC<br>
+            - MVCC = Multi-Version Concurrency Control.<br>
+            - Purpose: allow transactions to read appropriate versions of rows while other transactions are modifying them.<br>
+            - InnoDB uses Undo information to reconstruct older row versions.</p>
+            <p>Example:<br>
+            Current row = 9000<br>
+            Undo history → previous version = 10000<br><br>
+            If T1 changes:<br>
+            10000 → 9000<br><br>
+            - T1 works with the current version, while another transaction may be able to read the older committed version depending on its read view/isolation level.<br><br>
+            - Old versions are not permanent copies of the table.<br>
+            - Old versions can eventually be removed by purge when no transaction needs them anymore.</p>
+            <p>NORMAL SELECT VS LOCKING SELECT<br>
+            - NORMAL SELECT uses NO LOCK<br>
+            - SELECT ... FOR UPDATE uses X Lock<br>
+            - SELECT ... FOR SHARE uses S lock</p>
+
+            <br>
+            <h3>PART 8 -- BINARY LOGS</h3>
+            <p>Binlog and Redo Log solve different problems.</p>
+            <p>Why do we need Binlog ?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            We have Redo Log :- Update -> REDO LOG -> Crash Recovery<br>
+            Redo Log is an Inno DB storage-engine recovery mechanism.<br><br>
+            MySQL also needs a log that records database changes at the server level specially for:<br>
+            - replication<br>
+            - point-in-time recovery</p>
+
+            <p>What does Binlog contain?<br>
+            -x-x-x-x-x-x-x-x-x-x-x-x-x-x<br>
+            The binlog records changes/events associated with transactions.</p>
+
+            <p>Redo vs Binglog<br>
+            -x-x-x-x-x-x-x-x-x<br>
+            Redo Log :-<br>
+            = Belongs primarily to InnoDB<br>
+            = Crash Recovery is main purpose<br>
+            = Storage engine recovery log<br>
+            = Used by InnoDB<br>
+            = Information needed to recover page<br>
+            = Not used for replication<br><br>
+            Binlog :-<br>
+            = Belongs primarily to MySQL server<br>
+            = Replication and Recovery are main purpose<br>
+            = Event oriented log<br>
+            = Used by replicas and recovery tools<br>
+            = Information related to transaction changes / events<br>
+            = Used for replication</p>
+
+<pre><code>                    UPDATE
+                      │
+          ┌─────────┴─────────┐
+          ↓         	           ↓
+       REDO LOG                 BINLOG
+          ↓                        ↓
+   InnoDB recovery       	Replication
+                         
+Redo:
+"information needed by InnoDB to recover pages" (so cant used by replicas)
+
+Binlog:
+"information about database changes/events that can be reproduced"
+(Point in time recovery is major usage)</code></pre>
+
+            <br>
+            <h3>PART 9 -- FINAL CONLCUSION AND OVERVIEW</h3>
+            <p>UNDO LOG :-<br>
+            1. InnoDB transactional history used to reverse changes and reconstruct older row versions.<br>
+            2. Answers "How do i go backward?".<br>
+            3. Primary purpose to handle ROLLBACK.<br>
+            4. Belongs to InnoDB<br>
+            5. Backward direction (reconstruct / previous state).<br>
+            6. Generated when InnoDB performs changes.<br>
+            7. Stores info that help reconstruct the value.<br>
+            8. Exists during the transaction. After commit, it maybe still needed temporarily by MVCC.<br>
+            9. ROLLBACK is primary use.<br>
+            10. Also used by ROLLBACK TO SAVEPOINT.<br>
+            11. Used for crash recovery to undo incomplete / uncommitted transactional work after redo recovery.<br>
+            12. Not used for point-in-time recovery.<br>
+            13. Through InnoDB's purge process when no active transaction needs the old history, undo logs are cleared eventually.<br><br>
+            -- What they actually store ?<br>
+            1. transaction ID<br>
+            2. undo record metadata<br>
+            3. affected record information<br>
+            4. undo record pointer (link to previous versions)<br>
+            5. For an INSERT:<br>
+            - Information needed to remove the inserted record during rollback.<br>
+            For an UPDATE:<br>
+            - Previous values of the columns that were changed.<br>
+            For a DELETE:<br>
+            - Information needed to reconstruct the deleted record.<br>
+            For MVCC:<br>
+            - The information required to reconstruct an older visible version of the row.</p>
+
+            <p>REDO LOG :-<br>
+            1. InnoDB recovery log used to reapply/recover changes that may not have reached the data pages on disk before a crash.<br>
+            2. Answers "How do I recover/reapply the change?"<br>
+            3. Primary purpose is crash recovery and durability of InnoDB page changes.<br>
+            4. Belongs to InnoDB.<br>
+            5. Forward direction — reconstruct/reapply the required change.<br>
+            5. Generated when InnoDB modifies database/index pages.<br>
+            6. Stores information needed to reproduce the modifications to InnoDB pages during recovery.<br>
+            7. Exists as part of the ongoing redo stream; after commit, the relevant redo must remain available until it is no longer needed for recovery, after which its space can be reused.<br>
+            8. Crash recovery is the primary use.<br>
+            9. Not used to perform normal ROLLBACK or ROLLBACK TO SAVEPOINT; rollback is primarily handled using Undo.<br>
+            10. During crash recovery, Redo is used to reapply required changes, including changes whose dirty data pages had not yet been persisted to disk.<br>
+            11. Not used for reconstructing old row versions.<br>
+            12. Not used as the replication log.<br>
+            13. Supports the WAL (Write-Ahead Logging) -- principle: required redo information must be persisted ahead of the corresponding data-page persistence so recovery remains possible.<br>
+            14. Works with dirty pages in the Buffer Pool; a dirty page can remain in memory while its redo information provides crash-recovery protection.<br>
+            15. COMMIT does not mean the data page is immediately written to disk; the committed transaction's required redo durability can be established while the dirty page is flushed later.<br>
+            16. During crash recovery, InnoDB uses LSNs (Log Sequence Numbers) to determine which redo records are relevant to pages.<br>
+            17. Through checkpointing, once older redo is no longer required for recovery, its space can eventually be reused.<br><br>
+            -- What they actually store ?<br>
+            1. Log sequence number<br>
+            2. Information identifying the affected InnoDB page/structure.<br>
+            3. Type of modification/operation performed.<br>
+            4. Information needed to reproduce that modification during crash recovery.<br>
+            5. For an INSERT:<br>
+            - Information needed to reproduce the relevant page/index modification.<br>
+            For an UPDATE:<br>
+            - Information needed to reproduce the modification made to the affected InnoDB page.<br>
+            For a DELETE:<br>
+            - Information needed to reproduce the deletion-related page/index modification.</p>
+
+            <p>BINARY LOG (BINLOG)<br>
+            1. MySQL server-level change/event log used to record transactions/events for replication and recovery workflows.<br>
+            2. Answers "What database changes/events happened?"<br>
+            3. Primary purpose is replication and point-in-time recovery (PITR).<br>
+            4. Belongs to the MySQL server layer, rather than being an InnoDB-only log.<br>
+            5. Generated when MySQL processes changes that are configured to be written to the binary log, such as INSERT, UPDATE, and DELETE.<br>
+            6. Stores transaction/event information according to the configured binlog format:<br>
+            STATEMENT → SQL statements<br>
+            ROW → row changes<br>
+            MIXED → combination depending on the situation<br>
+            7. Exists independently of the InnoDB Undo/Redo logs; committed transaction events remain available according to binlog retention/expiration settings.<br>
+            8. Replication is a primary use.<br>
+            9. Also used for Point-in-Time Recovery (PITR) by replaying binlog events after restoring a backup.<br>
+            10. Not used for normal ROLLBACK.<br>
+            11. Not used for ROLLBACK TO SAVEPOINT.<br>
+            12. Not used for MVCC or reconstructing old row versions.<br>
+            13. Not used as the mechanism that directly recovers dirty InnoDB pages after a crash; that is the job of Redo.<br>
+            14. A transaction that is rolled back is not treated as a successfully committed transaction for replication.<br>
+            15. A transaction's binlog events are associated with the transaction and are finalized as part of the commit process.<br>
+            16. Works with Redo Log during transaction commit; MySQL coordinates the storage engine and binary log so their transaction states remain consistent.<br>
+            17. Can be used to restore a database from a backup and replay changes up to a specific time.<br>
+            18. Binlog files can eventually be expired/purged when they are no longer required by replication or recovery.<br>
+            19. Does not replace Undo or Redo; it solves a different problem.<br><br>
+            -- What they actually store ?<br>
+            1. Binlog event metadata<br>
+            2. Transaction / event information<br>
+            3. Information identifying the database/table involved in the event, where applicable.<br>
+            4. The actual change information depends on the binlog format.<br>
+            5. STATEMENT format: Stores the SQL statement that caused the change.<br>
+            6. ROW format : Stores row-change events rather than simply storing the SQL statement.<br>
+            7. Binlog also contains transaction boundary information, allowing a transaction's events to be represented as a transaction.</p>
+        </div>
+    </main>
+
+    <script src="../../js/app.js"></script>
+    <script src="../../js/ui-enhancements.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+</body>
+</html>
