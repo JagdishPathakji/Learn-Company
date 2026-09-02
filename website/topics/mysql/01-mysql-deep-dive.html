@@ -668,6 +668,224 @@ Binlog:
             6. ROW format : Stores row-change events rather than simply storing the SQL statement.<br>
             7. Binlog also contains transaction boundary information, allowing a transaction's events to be represented as a transaction.</p>
         </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">BACKUP</h2>
+            <hr>
+            
+            <p>1. WHAT IS A LOGICAL DATABASE DUMP ?<br>
+            A logical database dump is a file containing SQL statements that describe how to recreate a database and its objects and data.</p>
+            <p>LOGICAL DUMP = A database represented as SQL-Level instructions.<br>
+            So the dump is a textual representation of the database.</p>
+
+            <p>2. What a logical dump contain ?<br>
+            i. database schema / creation<br>
+            ii. table structure<br>
+            iii. table data<br>
+            iv. views<br>
+            v. stored procedure<br>
+            vi. stored functions<br>
+            vii. triggers<br>
+            viii. events<br>
+            So a logical dump can potentially represent almost the entire logical database environment. They contain above following things based on the selected options.</p>
+
+            <p>3. What is Schema / database ?<br>
+            A schema/database in MySQL is a logical container that holds database objects such as tables, views, stored routines, triggers, and events. In MySQL, "schema" and "database" are effectively synonymous.</p>
+
+            <p>4. Tabe Structure vs Table Data<br>
+            When MySQL Workbench exports a table, there are two fundamentally different things it can export:</p>
+            <p>i. The table's structure :- Table structure means the definition of the table — essentially, how the table is designed. [create, index]</p>
+            <p>ii. The table's actual rows/data :- Table data means the actual rows stored inside the table. [insert]</p>
+<pre><code>STRUCTURE
+├── Columns
+├── Data types
+├── Primary key
+├── Foreign keys
+├── Indexes
+└── Other definitions
+
+DATA
+└── Rows</code></pre>
+
+            <p>5. SQL DUMP<br>
+            A SQL dump is the actual file produced by a logical export that contains SQL statements representing database objects and/or data.</p>
+            <p>The important thing is that the .sql file is not the database itself. It is a collection of SQL instructions that MySQL can execute.</p>
+            <p>Dump contains following based on selected options :-<br>
+            -- SET ...<br>
+            -- CREATE DATABASE ... [Present if checked "Include Create Schema"]<br>
+            -- USE ...<br>
+            -- DROP TABLE ...<br>
+            -- CREATE TABLE ...<br>
+            -- INSERT INTO ...<br>
+            -- CREATE VIEW ...<br>
+            -- CREATE PROCEDURE ...<br>
+            -- CREATE FUNCTION ...<br>
+            -- CREATE TRIGGER ...<br>
+            -- CREATE EVENT ...</p>
+
+            <p>6. SELF CONTAINED DUMP<br>
+            In MySQL workbench data export, two important choices are provided:-<br>
+            i. Export to self-contained file<br>
+            ii. Export to dump project folder</p>
+            <p>A self-contained dump stores the exported SQL in a single dump file, rather than splitting the export across multiple files. the dump is intended to contain the information necessary for the selected export within that single file.</p>
+
+            <p>7. EXPORT DUMP TO PROJECT FOLDER<br>
+            In MySQL Workbench, Dump Project Folder is the alternative to Self-Contained File.</p>
+            <p>Dump Project Folder = one folder containing separate dump files for the exported objects/tables instead of putting everything into one SQL file.</p>
+
+            <p>8. SELECTIVE TABLE EXPORT<br>
+            Selective table export means exporting only specific tables from a schema instead of exporting the entire schema.</p>
+            <p>MySQL Workbench's SQL Data Export wizard lets you select a schema and then optionally choose specific schema objects/tables to export.</p>
+
+            <p>9. INCLUDE CREATE SCHEMA<br>
+            This option controls whether the SQL dump contains the command to create the database/schema itself.</p>
+            <p>Export to Self-Contained File<br>
+            -- The dump is one .sql file.<br>
+            -- Create Schema is controlled by the checkbox.</p>
+            <p>Export to Dump Project Folder<br>
+            -- The dump is split across files inside a folder.<br>
+            -- Create Schema is also controlled by the checkbox.</p>
+
+            <p>10. Single-Transaction Export / Dump<br>
+            The main question is:- What happens if the database is being modified while the export is running?</p>
+            <ul>
+                <li>Starts a transaction before reading the data.</li>
+                <li>Creates a consistent snapshot of InnoDB data.</li>
+                <li>Dump reads from that snapshot.</li>
+                <li>Normal INSERT, UPDATE, DELETE operations can  continue during the backup.</li>
+                <li>Changes committed after the snapshot was created are not visible to that backup.</li>
+                <li>Therefore, if:<br>
+                Snapshot starts at 10:00<br>
+                Backup runs until 10:20<br>
+                Row is inserted at 10:10<br>
+                The row will NOT be included in that backup.</li>
+                <li>The live database does contain the row after 10:10.</li>
+                <li>The backup represents the database state as seen from approximately the snapshot/start point, not the state at the moment the backup finishes.</li>
+                <li>If a row was committed before the snapshot, it can be included.</li>
+                <li>If a row is inserted after the snapshot, it is excluded.</li>
+                <li>This provides a consistent point-in-time view for InnoDB tables.</li>
+                <li>Normal application traffic can continue while the backup runs.</li>
+                <li>DDL operations such as ALTER TABLE, DROP TABLE, TRUNCATE TABLE, etc. can interfere with the dump.</li>
+            </ul>
+
+            <p>11. LOCKS<br>
+            - READ locks on the tables being dumped.<br>
+            - The dump reads the locked tables while those locks are held.<br>
+            - Other SELECT operations can generally continue.<br>
+            - INSERT operations on locked tables have to wait.<br>
+            - UPDATE operations on locked tables have to wait.<br>
+            - DELETE operations on locked tables have to wait.<br>
+            - Other operations requiring conflicting locks also have to wait.<br>
+            - The application is therefore partially blocked, not completely stopped.<br>
+            - Once the dump releases the locks, waiting write operations can continue.<br>
+            - The tables remain stable against conflicting modifications while being dumped.<br>
+            - This can be useful for non transactional tables where a transaction snapshot is unavailable.<br>
+            - For InnoDB, single-transaction is generally preferred because it avoids blocking normal writes for the duration of the dump.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">RESTORE</h2>
+            <hr>
+            
+            <p>1. Logical Database Restore / Import = reconstructing a MySQL database by executing a logical dump containing SQL statements and/or data generated from another database.</p>
+
+            <p>2. A logical dump represents the database at the logical level:<br>
+            -- Database/schema definitions<br>
+            -- Tables<br>
+            -- Columns and data types<br>
+            -- Constraints<br>
+            -- Indexes<br>
+            -- Views<br>
+            -- Stored procedures/functions<br>
+            -- Triggers<br>
+            -- Events<br>
+            -- Table data</p>
+
+            <p>3. Typical use cases:<br>
+            -- Moving a database between MySQL servers<br>
+            -- Restoring a database from a dump<br>
+            -- Migrating databases<br>
+            -- Recreating development/test databases<br>
+            -- Selectively restoring particular schemas/tables</p>
+
+            <p>4. In MySQL Workbench, Data Import provides a GUI around this restoration process:<br>
+            -- Select dump source<br>
+            -- Select target schema<br>
+            -- Select objects<br>
+            -- Import structure/data<br>
+            -- Execute the dump against the target server</p>
+
+            <p>5. Import from Dump Project Folder = importing a logical dump that is stored as a directory containing multiple dump files rather than one .sql file. A Dump Project Folder is typically produced when MySQL Workbench performs an export using the Dump Project Folder option.</p>
+            <p>During import, Workbench:<br>
+            -- Reads the dump project's metadata/files.<br>
+            -- Determines which schemas and objects are available.<br>
+            -- Lets you select the objects to restore.<br>
+            -- Executes the required SQL against the target MySQL server.</p>
+
+            <p>6. Self-Contained File = a logical dump stored as one file, typically a .sql file. Unlike a Dump Project Folder, the dump's SQL statements are contained in a single file.</p>
+
+            <p>7. You have a dump file, backup.sql and you want to import its tables/data into a particular database.<br>
+            Workbench needs to know: "If an imported object needs a target schema, which schema should I use?"<br>
+            Solution: You select that database in Default Target Schema or create new one if don't exists.</p>
+            <p>Default Target Schema is basically the fallback/default destination when the SQL being imported doesn't already specify where the object belongs. The dump's explicit schema instructions take precedence for statements that explicitly specify a schema.</p>
+            <p>CREATE DATABASE + USE → USE determines the target.<br>
+            CREATE DATABASE without USE → Default Target Schema can be used for the table.</p>
+
+            <p>8. When selectively restoring an object, also restore the objects required by its constraints/dependencies.</p>
+
+            <p>9. Schema selection → which database/schema are you restoring from the dump?<br>
+            Object selection → which tables/views/etc. inside that schema are you restoring?</p>
+
+            <p>10. Foreign-key dependency → commonly causes failure when the table is created.<br>
+            View dependency → commonly causes failure when the view is created.</p>
+
+            <p>11. Structure only import, data only import and structure + data import</p>
+
+            <p>12. Database objects can depend on other objects.<br>
+            Therefore, they cannot always be created in any random order.</p>
+
+            <p>13. The target MySQL server may already contain the schema or tables that the dump is trying to create.</p>
+            <p>During import, there can be conflicts at multiple levels:<br>
+            -- Database/schema already exists<br>
+            -- Table already exists<br>
+            -- View already exists<br>
+            -- Data already exists / duplicate keys<br>
+            -- Objects have incompatible definitions</p>
+
+            <p>14. To avoid this use<br>
+            IF EXISTS, INSERT IGNORE, etc</p>
+
+            <p>15. Problem: An import can fail because of:<br>
+            -- Existing table/schema conflicts<br>
+            -- Missing foreign-key dependencies<br>
+            -- Invalid SQL<br>
+            -- Duplicate primary/unique keys<br>
+            -- Permission errors<br>
+            -- Data type/constraint violations<br>
+            -- Connection/server errors</p>
+            
+            <p>- Workbench detects that a SQL operation failed.<br>
+            The import operation can report the error and stop/fail at that point.<br>
+            - Statements that were successfully executed before the failure may already have changed the database.<br>
+            - An import failure does not automatically mean everything that happened before the error is undone.</p>
+
+            <p>16. A failed logical import does not necessarily roll back the entire import. If the statements are inside a transaction, then Transactional changes can be undone.</p>
+            <p>But a logical database import contains many different types of operations. You cannot assume the entire import is one giant transaction.</p>
+            <p>If you need a clean, exact restore, prefer importing into: a new/empty schema.</p>
+            <p>In case of server down from MySQL, import may remain incomplete and committed work only remains. Failed import → don't assume resume or full rollback. For a clean restore, restart into a fresh/clean schema.</p>
+        </div>
+
+        <div class="concept-block">
+            <h2 class="concept-title">CHARACTER SET</h2>
+            <hr>
+            
+            <p>A character set is basically a rule that tells the computer how to represent characters as bytes.</p>
+            <p>For text inside this database, if I don't tell you another encoding, use UTF-8 (utf8mb4) to convert characters into bytes and bytes back into characters. (uses 8-bit bytes as its basic storage unit)</p>
+            <p>UTF-8 - Uses 1–4 bytes per character.<br>
+            UTF-16 - Usually uses 2 or 4 bytes per character.<br>
+            UTF-32 - Unicode encoding using 4 bytes per character.</p>
+            <p>utf8mb4 = MySQL's character set that implements full UTF-8 encoding. utf8mb4 = supports 1–4 byte UTF-8 characters, including emojis. The mb4 means maximum 4 bytes per character.</p>
+        </div>
     </main>
 
     <script src="../../js/app.js"></script>
