@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>C# LINQ (Language Integrated Query) - Deep Dive</title>
+    <title>C# LINQ (Language Integrated Query) - Complete Guide</title>
     <link rel="stylesheet" href="../../css/global.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <style>
@@ -17,9 +17,15 @@
         table.linq-table th, table.linq-table td { padding: 10px 12px; border: 1px solid var(--border-color); text-align: left; }
         table.linq-table th { background: var(--bg-main); color: var(--accent); font-weight: 600; }
         table.linq-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
-        .code-container { margin: 15px 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
-        .code-header { background: var(--bg-main); padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); font-family: monospace; }
-        .code-container pre { margin: 0; padding: 15px; border-radius: 0; }
+        .code-container { margin: 20px 0 30px 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
+        .code-header { background: var(--bg-main); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); font-family: monospace; }
+        .code-container pre { margin: 0; padding: 20px; border-radius: 0; overflow-x: auto; line-height: 1.5; font-size: 0.92rem; }
+        .section-divider { border: 0; height: 2px; background: linear-gradient(to right, var(--accent), transparent); margin: 50px 0 35px 0; }
+        .toc-quick-nav { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 35px; }
+        .toc-quick-nav h3 { margin-top: 0; color: var(--accent); margin-bottom: 12px; }
+        .toc-quick-nav ul { list-style: none; padding-left: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-bottom: 0; }
+        .toc-quick-nav a { color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .toc-quick-nav a:hover { color: var(--accent); }
     </style>
 </head>
 <body>
@@ -59,112 +65,128 @@
     <main class="main-content">
         <div class="topic-header">
             <h1>C# LINQ (Language Integrated Query)</h1>
-            <p class="metadata">Difficulty: Advanced | Category: C# Data Processing & Functional Querying</p>
+            <p class="metadata">Complete Training Documentation & Verbatim Source Code from <code>Training/C#/LINQ</code></p>
         </div>
 
         <div class="callout callout-info">
-            <span class="callout-title">Source Material Note</span>
-            <p>This chapter contains the complete notes, architectural diagrams, pitfall analyses, and runnable code directly imported from the training curriculum repository (<code>Desktop/Training/C#/LINQ</code>), covering in-memory collections, lazy evaluation semantics, and <code>DataTable</code> interop.</p>
+            <span class="callout-title">Full Curriculum View</span>
+            <p>Every single note, architectural diagram, pitfall explanation, and code file from <code>Desktop/Training/C#/LINQ</code> is rendered directly on this page with no hidden tabs or truncated scrollboxes. Scroll down or click any anchor in the quick navigation below to jump to that section.</p>
         </div>
 
-        <div class="topic-tabs">
-            <button class="topic-tab-btn active" onclick="switchTopicTab('tab-fundamentals')">1. Fundamentals & Hierarchy</button>
-            <button class="topic-tab-btn" onclick="switchTopicTab('tab-filtering-projection')">2. Filtering & Projection</button>
-            <button class="topic-tab-btn" onclick="switchTopicTab('tab-operators')">3. Operators Reference</button>
-            <button class="topic-tab-btn" onclick="switchTopicTab('tab-deferred-pitfalls')">4. Deferred & Pitfalls</button>
-            <button class="topic-tab-btn" onclick="switchTopicTab('tab-datatable')">5. LINQ to DataTable</button>
+        <div class="toc-quick-nav">
+            <h3>Quick Chapter Navigation</h3>
+            <ul>
+                <li><a href="#part1">Part 1: Lesson 1 — Why LINQ?</a></li>
+                <li><a href="#part2">Part 2: Lesson 2 — IEnumerable Hierarchy</a></li>
+                <li><a href="#part3">Part 3: Lesson 3 — Where() Filtering</a></li>
+                <li><a href="#part4">Part 4: Lesson 4 — Select() & SelectMany()</a></li>
+                <li><a href="#part5">Part 5: Deferred vs Immediate & Pitfalls</a></li>
+                <li><a href="#part6">Part 6: List-Pitfalls.cs (Full Code)</a></li>
+                <li><a href="#part7">Part 7: List.cs (All 11 Lessons Code)</a></li>
+                <li><a href="#part8">Part 8: LINQ to DataTable Notes</a></li>
+                <li><a href="#part9">Part 9: Datatable.cs (Full Code)</a></li>
+            </ul>
         </div>
 
-        <!-- TAB 1: FUNDAMENTALS & HIERARCHY -->
-        <div id="tab-fundamentals" class="topic-tab-content active">
+        <!-- ========================================================================= -->
+        <!-- PART 1: LESSON 1 -- WHY LINQ ? -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part1">
+        <div class="concept-block">
+            <h2 class="concept-title">=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-<br>LESSON 1 — WHY LINQ ?<br>=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</h2>
             
-            <div class="concept-block">
-                <h2 class="concept-title">Lesson 1 — Why LINQ?</h2>
-                <p>Before learning LINQ, let us understand the exact problem it solves in software engineering.</p>
-                
-                <p>Suppose our KnowledgeBase application has a collection of articles:</p>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Domain Models</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;Article&gt; articles;
+            <p>Before learning LINQ, let us understand the problem it solves.</p>
 
-// Each Article contains:
-// - ArticleId
-// - Title
-// - StatusId
-// - AuthorId</code></pre>
-                </div>
+            <p>Suppose our KnowledgeBase application has:</p>
+            <pre><code class="language-csharp">List&lt;Article&gt; articles;</code></pre>
 
-                <p>Now suppose we want: <em>"Give me all published articles"</em>.</p>
-                <p><strong>Without LINQ</strong>, we write a manual imperative loop:</p>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Imperative Filtering Loop</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;Article&gt; published = new List&lt;Article&gt;();
+            <p>Each Article contains:</p>
+            <ul>
+                <li><code>ArticleId</code></li>
+                <li><code>Title</code></li>
+                <li><code>StatusId</code></li>
+                <li><code>AuthorId</code></li>
+            </ul>
 
-foreach (Article article in articles) 
-{
-    if (article.StatusId == 5) 
-    {
+            <p>Now suppose we want: <em>"Give me all published articles"</em></p>
+
+            <p><strong>Without LINQ</strong>, we can easily write:</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Procedural Filtering Loop</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">List&lt;Article&gt; published = new List&lt;Article&gt;();
+
+foreach(Article article in articles) {
+    if(article.StatusId == 5) {
         published.Add(article);
     }
 }</code></pre>
-                </div>
-
-                <p>This works. So the fundamental question is: <strong>"WHY DO WE NEED LINQ?"</strong></p>
-                <p>Because real-world applications constantly need to perform repetitive operations on data:</p>
-                <ol>
-                    <li>Find all published articles</li>
-                    <li>Find articles written by a particular author</li>
-                    <li>Find articles whose title contains "SQL"</li>
-                    <li>Sort articles by title</li>
-                    <li>Find the first article with status "published"</li>
-                    <li>Count matching articles</li>
-                </ol>
-
-                <p>Without LINQ, we constantly write boilerplate loops. In each problem, the exact condition changes, but the core process is identical:</p>
-                <div class="diagram-box">COLLECTION ──► Examine each element ──► Apply some logic ──► Produce a result</div>
-
-                <p>LINQ gives us a unified, declarative standard to express these operations:</p>
-                <ul>
-                    <li><strong>LINQ = Language Integrated Query</strong></li>
-                    <li>It is a first-class set of C#/.NET features used to query and manipulate data.</li>
-                    <li>It provides a concise, readable syntax to query data instead of writing raw loops every single time.</li>
-                </ul>
-
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Declarative Query</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">var published = articles.Where(a => a.StatusId == 5);</code></pre>
-                </div>
-
-                <p>The primary advantage of LINQ is <strong>composability</strong>: it provides reusable operations for common data-processing tasks and lets you chain them sequentially:</p>
-
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Composed LINQ Pipeline</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">var titles = articles
-    .Where(a => a.StatusId == 5)
-    .Where(a => a.AuthorId == 101)
-    .OrderBy(a => a.Title)
-    .Select(a => a.Title);</code></pre>
-                </div>
-                <p>Each operation produces something that can be passed directly to the next operation. That ability to combine operations is the cornerstone of LINQ.</p>
-
-                <div class="callout callout-info">
-                    <span class="callout-title">SQL vs LINQ</span>
-                    <p>SQL is primarily used to query databases over a network. LINQ is part of C#/.NET and works with many kinds of data: in-memory collections, arrays, XML, JSON, DataTables, and remote databases (via Entity Framework / IQueryable).</p>
-                </div>
             </div>
 
-            <div class="concept-block">
-                <h2 class="concept-title">Lesson 2 — IEnumerable&lt;T&gt; and the LINQ Hierarchy</h2>
-                <p>In Lesson 1 we saw:</p>
-                <pre><code class="language-csharp">articles.Where(a => a.StatusId == 5);</code></pre>
-                <p>The question is: <strong>How does <code>.Where()</code> work on <code>List&lt;Article&gt;</code>?</strong></p>
-                <p><code>List&lt;T&gt;</code> does not define a method called <code>Where()</code>. So where does it come from?</p>
+            <p>This works. So the question is: <strong>"WHY DO WE NEED LINQ?"</strong></p>
 
-                <p>The answer: LINQ methods are <strong>Extension Methods</strong> defined on <code>IEnumerable&lt;T&gt;</code>. They live in the static class <code>System.Linq.Enumerable</code> and target <code>this IEnumerable&lt;TSource&gt;</code>.</p>
-                <p>Because <code>List&lt;Article&gt;</code> implements <code>IEnumerable&lt;Article&gt;</code>, it automatically gains access to <code>Where()</code>, <code>Select()</code>, <code>OrderBy()</code>, <code>Count()</code>, and every other LINQ method. This is why understanding <code>IEnumerable&lt;T&gt;</code> is the real foundation of LINQ.</p>
+            <p>Because applications constantly need to perform operations on data. For example:</p>
+            <ol>
+                <li>find all published articles</li>
+                <li>find articles written by particular author</li>
+                <li>find articles whose title contains "SQL"</li>
+                <li>sort articles by title</li>
+                <li>find the first article with status "published"</li>
+                <li>count articles</li>
+            </ol>
 
-                <h3>The .NET Collection Hierarchy</h3>
-                <div class="diagram-box">IEnumerable            (non-generic, .NET 1.0 style, works with 'object')
+            <p>Without LINQ, we frequently write loops to perform these operations.</p>
+            <p>However, in each problem, the exact requirement changes, but the basic process is repeated:</p>
+            <div class="diagram-box">COLLECTION ──► Examine each element ──► Apply some logic ──► Produce a result</div>
+
+            <p>LINQ gives us a standard way to express these operations. The important idea is:</p>
+            <ul>
+                <li><strong>LINQ = Language Integrated Query</strong></li>
+                <li>It is a set of C#/.NET features used to query and manipulate data.</li>
+                <li>It provides a shorter way to query data instead of writing loop everytime.</li>
+            </ul>
+
+            <p><strong>Example:</strong></p>
+            <pre><code class="language-csharp">articles.Where(a =&gt; a.StatusId == 5);</code></pre>
+
+            <p>The advantage of LINQ is that it gives us reusable operations for common data-processing tasks and lets us compose those operations.</p>
+
+            <p>For example, eventually we can express:</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Composed LINQ Pipeline</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">articles
+    .Where(a =&gt; a.StatusId == 5)
+    .Where(a =&gt; a.AuthorId == 101)
+    .OrderBy(a =&gt; a.Title)
+    .Select(a =&gt; a.Title)</code></pre>
+            </div>
+
+            <p>Each operation produces something that can be passed to the next operation. That ability to combine operations is one of the most important ideas in LINQ.</p>
+
+            <div class="callout callout-info">
+                <span class="callout-title">SQL vs LINQ</span>
+                <p>SQL is primarily used to query databases. LINQ is part of C#/.NET and can work with many kinds of data.</p>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PART 2: LESSON 2 -- IEnumerable<T> and LINQ Hierarchy -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part2">
+        <div class="concept-block">
+            <h2 class="concept-title">=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-<br>LESSON 2 — IEnumerable&lt;T&gt; and LINQ Hierarchy<br>=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</h2>
+            
+            <p>In Lesson 1 we saw:</p>
+            <pre><code class="language-csharp">articles.Where(a =&gt; a.StatusId == 5);</code></pre>
+
+            <p>The question is: <strong>How does <code>.Where()</code> work on <code>List&lt;Article&gt;</code>?</strong></p>
+            <p><code>List&lt;T&gt;</code> does not define a method called <code>Where()</code>. So where does it come from?</p>
+
+            <p>The answer is: LINQ methods are <strong>"Extension Methods"</strong> defined on <code>IEnumerable&lt;T&gt;</code>. Since <code>List&lt;Article&gt;</code> implements <code>IEnumerable&lt;Article&gt;</code>, it automatically gets access to <code>Where()</code>, <code>Select()</code>, <code>OrderBy()</code>, <code>Count()</code>, and other LINQ methods. They all live in the static class <code>System.Linq.Enumerable</code> and target <code>IEnumerable&lt;T&gt;</code>.</p>
+
+            <p>This is why understanding <code>IEnumerable&lt;T&gt;</code> is the real foundation of LINQ. Everything else is built on top of it.</p>
+
+            <h3>Now let's see where List&lt;T&gt; and other collections fit in:</h3>
+            <div class="diagram-box">IEnumerable            (non-generic, old .NET 1.0 style, works with 'object')
     │
 IEnumerable&lt;T&gt;         (generic version, type-safe, this is what LINQ targets)
     │
@@ -172,619 +194,1218 @@ ICollection&lt;T&gt;         (adds Count, Add, Remove, Contains)
     │
 IList&lt;T&gt;               (adds indexer: list[i], Insert, RemoveAt)
     │
-List&lt;T&gt;                (the concrete class you actually instantiate)</div>
+List&lt;T&gt;                (the concrete class you actually use)</div>
 
-                <p>When you declare:</p>
-                <pre><code class="language-csharp">List&lt;Article&gt; articles;</code></pre>
-                <p><code>articles</code> is-a <code>IList&lt;Article&gt;</code>, which is-a <code>ICollection&lt;Article&gt;</code>, which is-a <code>IEnumerable&lt;Article&gt;</code>.</p>
-                <p>Because of this inheritance chain, <strong>every LINQ method that expects an <code>IEnumerable&lt;T&gt;</code> happily accepts a <code>List&lt;T&gt;</code>, an <code>Article[]</code> array, a <code>HashSet&lt;Article&gt;</code>, a <code>Dictionary&lt;TKey, TValue&gt;.Values</code>, or literally anything that can be iterated element-by-element.</strong></p>
+            <p>So when you declare:</p>
+            <pre><code class="language-csharp">List&lt;Article&gt; articles;</code></pre>
 
-                <div class="advanced-box">
-                    <span class="advanced-title">IEnumerable&lt;T&gt; vs IQueryable&lt;T&gt;</span>
-                    <ul>
-                        <li><strong>IEnumerable&lt;T&gt; ("LINQ to Objects"):</strong> Operates on in-memory data (List, Array, DataTable rows after AsEnumerable). Executes compiled C# code in memory, step-by-step.</li>
-                        <li><strong>IQueryable&lt;T&gt; ("LINQ to SQL / Entity Framework"):</strong> Holds an Expression Tree. Instead of running C# loops, EF passes the expression tree to a provider that translates your LINQ into pure SQL queries executed directly by the database server.</li>
-                    </ul>
-                </div>
+            <p><code>articles</code> is-a <code>IList&lt;Article&gt;</code>, which is-a <code>ICollection&lt;Article&gt;</code>, which is-a <code>IEnumerable&lt;Article&gt;</code>.</p>
+
+            <p>Because of this chain, <strong>EVERY</strong> LINQ method that expects an <code>IEnumerable&lt;T&gt;</code> happily accepts a <code>List&lt;T&gt;</code>, an <code>Article[]</code>, a <code>HashSet&lt;Article&gt;</code>, a <code>Dictionary&lt;T,V&gt;.Values</code>, or literally anything that can be walked element-by-element.</p>
+
+            <p>This is the whole point: LINQ doesn't care what kind of collection you have. It only cares that it can be enumerated.</p>
+
+            <h3>Going for LINQ with DataTable:</h3>
+            <p><code>DataTable</code> does NOT implement <code>IEnumerable&lt;T&gt;</code> directly usable for LINQ.</p>
+
+            <p><code>DataTable</code> has a property:</p>
+            <pre><code class="language-csharp">DataTable.Rows ──► DataRowCollection</code></pre>
+
+            <p><code>DataRowCollection</code> implements the OLD non-generic <code>IEnumerable</code> (not <code>IEnumerable&lt;T&gt;</code>). So this will NOT compile:</p>
+            <pre><code class="language-csharp">dataTable.Rows.Where(r =&gt; ...);   // ERROR</code></pre>
+
+            <p>Because <code>Where()</code> needs <code>IEnumerable&lt;T&gt;</code>, and <code>DataRowCollection</code> only gives <code>IEnumerable</code> (of plain object, non-typed).</p>
+
+            <p>To fix this, .NET gives us an extension method:</p>
+            <pre><code class="language-csharp">dataTable.AsEnumerable().Where(r =&gt; ...)</code></pre>
+
+            <p><code>AsEnumerable()</code> converts <code>DataRowCollection</code> into <code>IEnumerable&lt;DataRow&gt;</code>, which THEN allows every LINQ method to work.</p>
+
+            <blockquote>"LINQ methods need IEnumerable&lt;T&gt;. DataTable's row collection isn't one by default, so we must convert it first."</blockquote>
+
+            <div class="advanced-box">
+                <span class="advanced-title">IEnumerable&lt;T&gt; vs IQueryable&lt;T&gt;</span>
+                <ul>
+                    <li><strong>IEnumerable&lt;T&gt;  ──►  "LINQ to Objects"</strong> — works on in-memory data (<code>List&lt;T&gt;</code>, <code>Array</code>, <code>DataTable</code> rows after <code>AsEnumerable</code>). Runs actual C# code, in memory, line by line.</li>
+                    <li><strong>IQueryable&lt;T&gt;   ──►  used for LINQ to SQL / Entity Framework</strong> — Translates your LINQ into SQL and runs it on the database server instead of in memory.</li>
+                </ul>
             </div>
-
         </div>
 
-        <!-- TAB 2: FILTERING & PROJECTION -->
-        <div id="tab-filtering-projection" class="topic-tab-content">
-            
-            <div class="concept-block">
-                <h2 class="concept-title">Lesson 3 — Filtering Deep Dive: Where()</h2>
-                
-                <h3>Method Signatures</h3>
-                <p><code>Where()</code> has two overloads in <code>System.Linq.Enumerable</code>:</p>
+        <!-- ========================================================================= -->
+        <!-- PART 3: LESSON 3 -- FILTERING DEEP DIVE (WHERE) -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part3">
+        <div class="concept-block">
+            <h2 class="concept-title">=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-<br>LESSON 3 — FILTERING DEEP DIVE (WHERE)<br>=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</h2>
 
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Overload 1: Standard Predicate</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(
-    this IEnumerable&lt;TSource&gt; source, 
-    Func&lt;TSource, bool&gt; predicate)</code></pre>
-                </div>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Overload 2: Indexed Predicate</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(
-    this IEnumerable&lt;TSource&gt; source, 
-    Func&lt;TSource, int, bool&gt; predicate)
+            <h3>----- THE SIGNATURE -----</h3>
+            <p><code>Where()</code> has TWO overloads in <code>System.Linq.Enumerable</code>:</p>
 
-// Example: filter by position in sequence (0-based)
-List&lt;Article&gt; everyOther = articles
-    .Where((a, index) => index % 2 == 0)
+            <div class="code-container">
+                <div class="code-header"><span>C# - Overload 1</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, bool&gt; predicate)</code></pre>
+            </div>
+            <p><strong>Example:</strong></p>
+            <pre><code class="language-csharp">List&lt;Article&gt; published = articles
+                            .Where(a =&gt; a.StatusId == 5)
+                            .ToList();</code></pre>
+            <p><em>Note:</em> <code>Where()</code> does NOT create a new <code>List&lt;Article&gt;</code> by itself. It returns <code>IEnumerable&lt;Article&gt;</code>. Calling <code>.ToList()</code> at the end is what actually forces it to run and collect results into a real <code>List&lt;Article&gt;</code>.</p>
+
+            <div class="code-container">
+                <div class="code-header"><span>C# - Overload 2 (Indexed)</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, int, bool&gt; predicate)</code></pre>
+            </div>
+            <p><strong>Example:</strong></p>
+            <pre><code class="language-csharp">List&lt;Article&gt; everyOther = articles
+                            .Where((a, index) =&gt; index % 2 == 0)
+                            .ToList();</code></pre>
+            <p>Here: <code>a</code> = the current Article, <code>index</code> = its position in the sequence (0-based).</p>
+            <p>Both take a "predicate" — a function that looks at an element and returns true (keep it) or false (throw it away).</p>
+
+            <h3>----- FILTERING WITH NULL CHECKS -----</h3>
+            <p>A classic mistake is forgetting that a property might be null, and crashing with a <code>NullReferenceException</code>.</p>
+            <p>Suppose Article has an optional field: <code>string? Summary;</code></p>
+
+            <div class="mistake-box">
+                <span class="mistake-title">WRONG (crashes if Summary is null for any article):</span>
+                <pre><code class="language-csharp">var withSql = articles
+    .Where(a =&gt; a.Summary.Contains("SQL"))
     .ToList();</code></pre>
-                </div>
-
-                <div class="callout callout-info">
-                    <span class="callout-title">Crucial Execution Detail</span>
-                    <p><code>Where()</code> does <strong>not</strong> create a new <code>List&lt;Article&gt;</code> by itself. It returns an <code>IEnumerable&lt;Article&gt;</code>. Calling <code>.ToList()</code> at the end is what actually forces it to execute the loop and collect results into a real <code>List&lt;Article&gt;</code>.</p>
-                </div>
-
-                <h3>Filtering with Null Checks</h3>
-                <p>A classic production bug is forgetting that a property might be null, crashing with a <code>NullReferenceException</code>.</p>
-                <div class="mistake-box">
-                    <span class="mistake-title">WRONG (Crashes at runtime if Summary is null):</span>
-                    <pre><code class="language-csharp">var withSql = articles
-    .Where(a => a.Summary.Contains("SQL"))
-    .ToList();</code></pre>
-                </div>
-                <div class="code-container">
-                    <div class="code-header"><span>CORRECT - Guard the null check first:</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// Approach A: Explicit null guard
-var withSql = articles
-    .Where(a => a.Summary != null && a.Summary.Contains("SQL"))
-    .ToList();
-
-// Approach B: Null-conditional operator
-var withSql = articles
-    .Where(a => a.Summary?.Contains("SQL") == true)
-    .ToList();</code></pre>
-                </div>
-
-                <h3>Common Rules of Where()</h3>
-                <ol>
-                    <li><code>Where()</code> does not modify the original collection.</li>
-                    <li><code>Where()</code> executes lazily. If you define <code>var q = articles.Where(...);</code> and then call <code>articles.Clear();</code>, executing <code>q.ToList()</code> yields <strong>0 elements</strong> because it re-evaluates the recipe against the cleared source.</li>
-                </ol>
             </div>
 
-            <div class="concept-block">
-                <h2 class="concept-title">Lesson 4 — Projection: Select() & SelectMany()</h2>
-                <p><code>Select()</code> keeps <strong>every</strong> element, but <strong>transforms</strong> each one into something else. This transformation is called <strong>Projection</strong>.</p>
-                <div class="diagram-box">Where()   ──► "Which items do I want to keep?" (filters rows)
-Select()  ──► "What shape do I want each item in?" (shapes columns/types)</div>
+            <div class="code-container">
+                <div class="code-header"><span>CORRECT (guard the null first):</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var withSql = articles
+    .Where(a =&gt; a.Summary != null && a.Summary.Contains("SQL"))
+    .ToList();
 
-                <h3>The Select() Signature</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Select Signature</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">public static IEnumerable&lt;TResult&gt; Select&lt;TSource, TResult&gt;(
+// Alternative using the null-conditional operator:
+var withSql = articles
+    .Where(a =&gt; a.Summary?.Contains("SQL") == true)
+    .ToList();</code></pre>
+            </div>
+
+            <h3>----- COMMON POINTS ABOUT WHERE() -----</h3>
+            <ol>
+                <li><code>Where()</code> does not modify the original list.</li>
+                <li><strong>Assuming <code>Where()</code> runs immediately:</strong>
+                    <div class="code-container">
+                        <div class="code-header"><span>C# - Recipe Lifecycle Proof</span><button class="copy-btn">Copy</button></div>
+                        <pre><code class="language-csharp">var query = articles.Where(a =&gt; a.StatusId == 5);
+articles.Clear();                 // clears the original list!
+var list = query.ToList();        // list will now be EMPTY</code></pre>
+                    </div>
+                    <p><strong>Working:</strong></p>
+                    <ol>
+                        <li><code>var query = articles.Where(a =&gt; a.StatusId == 5);</code> — Nothing gets filtered here.</li>
+                        <li>This line just creates a "recipe" that says <em>"whenever someone actually asks me for values, go loop through articles and check StatusId == 5."</em> <code>query</code> is just that unfired recipe, pointing at the articles list.</li>
+                        <li><code>articles.Clear();</code> — Now the actual articles list is emptied — 0 elements in it. The query variable still exists, but it never "took a copy" of the data — it only stored instructions referring to articles.</li>
+                        <li><code>var list = query.ToList();</code> — THIS is the moment the recipe actually runs. Only now does it go "ok, let me loop through articles and check the condition." But articles is empty at this point (because of Step 2), so there's nothing to loop through. Result: list has 0 elements.</li>
+                    </ol>
+                </li>
+            </ol>
+
+            <p>Anything that needs a concrete, final answer right now will force the loop to run immediately. <code>.ToList()</code> is only one member of that family. Other options:</p>
+            <ul>
+                <li><code>ToList()</code>, <code>ToArray()</code>, <code>ToDictionary()</code>, <code>ToHashSet()</code></li>
+                <li><code>Count()</code>, <code>First()</code>, <code>Any()</code>, <code>Sum()</code>, <code>Average()</code></li>
+            </ul>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PART 4: LESSON 4 -- PROJECTION (SELECT and SELECTMANY) -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part4">
+        <div class="concept-block">
+            <h2 class="concept-title">=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-<br>LESSON 4 — PROJECTION (SELECT and SELECTMANY)<br>=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</h2>
+
+            <p><code>Select()</code> keeps <strong>EVERY</strong> element, but <strong>TRANSFORMS</strong> each one into something else. This is called <strong>PROJECTION</strong>.</p>
+
+            <div class="diagram-box">Where()   ──►  "which items do I want?"
+Select()  ──►  "what shape do I want each item in?"</div>
+
+            <h3>----- THE SIGNATURE -----</h3>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Select Signature</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">public static IEnumerable&lt;TResult&gt; Select&lt;TSource, TResult&gt;(
     this IEnumerable&lt;TSource&gt; source,
     Func&lt;TSource, TResult&gt; selector)</code></pre>
-                </div>
-                <p>Notice there are <strong>two</strong> generic type parameters: <code>TSource</code> and <code>TResult</code>. <code>Where()</code> only has <code>TSource</code> because filtering never changes the underlying type. <code>Select()</code> can take in <code>Article</code> and output <code>string</code>, <code>int</code>, an anonymous type, or a DTO class.</p>
+            </div>
 
-                <h3>Four Common Select() Variations</h3>
-                
-                <h4>Variation 1 — Projecting to a Single Property</h4>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Single Property</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;string&gt; titlesOnly = articles
-    .Select(a => a.Title)
+            <p>Notice there are TWO generic type parameters here — <code>TSource</code> and <code>TResult</code>. That's the important difference from <code>Where()</code>.</p>
+            <p><code>Where()</code>'s signature only had ONE type parameter (<code>TSource</code>), because filtering never changes the type — an <code>IEnumerable&lt;Article&gt;</code> filtered is still an <code>IEnumerable&lt;Article&gt;</code>.</p>
+            <p><code>Select()</code> can go IN as one type and come OUT as a completely different type. <code>IEnumerable&lt;Article&gt;</code> in, <code>IEnumerable&lt;string&gt;</code> out. Or <code>IEnumerable&lt;Article&gt;</code> in, <code>IEnumerable&lt;SomeCustomType&gt;</code> out.</p>
+            <p>Same number of elements go in as come out — <code>Select()</code> never removes anything. If you want to both filter AND transform, you combine <code>Where()</code> and <code>Select()</code> together.</p>
+
+            <h3>VARIATION 1 — PROJECTING TO A SINGLE PROPERTY</h3>
+            <p>If all you need is titles, not full Article objects:</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Single Property</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">List&lt;string&gt; titlesOnly = articles
+    .Select(a =&gt; a.Title)
     .ToList();</code></pre>
-                </div>
+            </div>
+            <p><code>a =&gt; a.Title</code> is the selector: "given an Article, give me back just its Title." The result type is <code>List&lt;string&gt;</code> — NOT <code>List&lt;Article&gt;</code> anymore.</p>
 
-                <h4>Variation 2 — Projecting into an Anonymous Type</h4>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Anonymous Type</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">var titleAndAuthor = articles
-    .Select(a => new { a.Title, a.AuthorId })
+            <h3>VARIATION 2 — PROJECTING INTO AN ANONYMOUS TYPE</h3>
+            <p>Sometimes you want more than one field, but not the WHOLE object:</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Anonymous Type</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var titleAndAuthor = articles
+    .Select(a =&gt; new { a.Title, a.AuthorId })
     .ToList();</code></pre>
-                </div>
-                <p><em>Limitation:</em> Anonymous types cannot be returned as public method return types; they are intended for local, throwaway operations.</p>
+            </div>
+            <p><code>new { a.Title, a.AuthorId }</code> builds a small throwaway object holding just those two fields. You didn't define a class for it — C# infers the shape automatically. This is called an <strong>ANONYMOUS TYPE</strong>.</p>
+            <p>Anonymous types are great for:</p>
+            <ul>
+                <li>quickly shaping data for display</li>
+                <li>passing a "slice" of data somewhere without creating a full class</li>
+                <li>intermediate steps in a LINQ chain</li>
+            </ul>
+            <p><em>Limitation:</em> you can't return an anonymous type from a method (its type has no name outside that method), and you can't easily pass it around as a parameter type either.</p>
 
-                <h4>Variation 3 — Projecting into a DTO (Data Transfer Object)</h4>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - DTO Projection</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">public class ArticleDto
+            <h3>VARIATION 3 — PROJECTING INTO A DTO (a real class)</h3>
+            <p>DTO = "Data Transfer Object" — a small class whose only job is carrying a shaped subset of data from one place to another.</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - DTO Projection</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">public class ArticleDto
 {
     public string Title { get; set; }
     public string AuthorName { get; set; }
 }
 
 List&lt;ArticleDto&gt; dtos = articles
-    .Select(a => new ArticleDto
+    .Select(a =&gt; new ArticleDto
     {
         Title = a.Title,
-        AuthorName = "Author #" + a.AuthorId
+        AuthorName = "Author #" + a.AuthorId   // pretend lookup
     })
     .ToList();</code></pre>
-                </div>
+            </div>
+            <p>Same idea as the anonymous type version, but now it has a real, reusable, nameable type — you CAN return this from a method, pass it around, use it anywhere.</p>
+            <p>Rule of thumb:</p>
+            <ul>
+                <li><strong>Anonymous type</strong> ──► quick, throwaway, stays local to one method</li>
+                <li><strong>DTO class</strong> ──► reusable, named, crosses method/API boundaries</li>
+            </ul>
 
-                <h4>Variation 4 — Indexed Select()</h4>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Indexed Select</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">var numbered = articles
-    .Select((a, index) => $"{index + 1}. {a.Title}")
+            <h3>VARIATION 4 — INDEXED Select()</h3>
+            <p>Just like <code>Where()</code> had an indexed overload, <code>Select()</code> does too:</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Indexed Select</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">public static IEnumerable&lt;TResult&gt; Select&lt;TSource, TResult&gt;(
+    this IEnumerable&lt;TSource&gt; source,
+    Func&lt;TSource, int, TResult&gt; selector)
+
+// Example — numbering each item based on its position:
+var numbered = articles
+    .Select((a, index) =&gt; $"{index + 1}. {a.Title}")
     .ToList();</code></pre>
-                </div>
+            </div>
+            <p>The index is the POSITION IN THE SEQUENCE at enumeration time — not a stored property like <code>ArticleId</code>.</p>
 
-                <h3>SelectMany() — Flattening Nested Collections</h3>
-                <p><code>Select()</code> is <strong>1-to-1</strong>: each input element produces exactly one output element. If an element contains a nested collection, <code>Select()</code> produces a list of lists (<code>List&lt;List&lt;string&gt;&gt;</code>).</p>
-                <p><code>SelectMany()</code> is <strong>1-to-Many, Flattened</strong>: each input element produces a collection, and all those inner collections are concatenated into one flat sequence.</p>
-
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Select vs SelectMany Comparison</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// Given Article with List&lt;string&gt; Tags:
-// articles[0].Tags = ["sql", "database"]
-// articles[1].Tags = ["linq", "csharp"]
-
-// WRONG TOOL (Select): Produces List&lt;List&lt;string&gt;&gt;
-var wrong = articles.Select(a => a.Tags).ToList();
-
-// RIGHT TOOL (SelectMany): Produces flat List&lt;string&gt;
-// Result: ["sql", "database", "linq", "csharp"]
-var allTags = articles
-    .SelectMany(a => a.Tags)
+            <h3>COMBINING Where() AND Select()</h3>
+            <p>This is the most common real-world pattern: filter first, then shape the output. Order matters for readability (filter early = less work per item during the shaping step):</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Filter then Project</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var publishedTitles = articles
+    .Where(a =&gt; a.StatusId == 5)
+    .Select(a =&gt; a.Title)
     .ToList();</code></pre>
-                </div>
+            </div>
+            <p>Read it left to right: <em>"start with all articles, keep only published ones, then give me just their titles."</em></p>
+
+            <h3>SELECTMANY()</h3>
+            <p><strong>The core problem SelectMany solves:</strong></p>
+            <p>Say you have a list of lists:</p>
+            <pre><code class="language-csharp">List&lt;List&lt;int&gt;&gt; numberGroups = new List&lt;List&lt;int&gt;&gt;
+{
+    new List&lt;int&gt; { 1, 2, 3 },
+    new List&lt;int&gt; { 4, 5 },
+    new List&lt;int&gt; { 6 }
+};</code></pre>
+            <p>You want ONE flat list: <code>1, 2, 3, 4, 5, 6</code>.</p>
+            <p>If you use <code>Select()</code>: <code>var result = numberGroups.Select(group =&gt; group).ToList();</code> — this gives you back... the same <code>List&lt;List&lt;int&gt;&gt;</code>. Nothing flattened. Because <code>Select()</code> is 1-to-1 — one group in, one group out, still nested.</p>
+            <p>If you use <code>SelectMany()</code>: <code>var result = numberGroups.SelectMany(group =&gt; group).ToList();</code> — this gives you: <code>[1, 2, 3, 4, 5, 6]</code> — one flat <code>List&lt;int&gt;</code>.</p>
+            <p>What's happening: for each group (a <code>List&lt;int&gt;</code>), <code>SelectMany</code> reaches inside it and pulls out all its individual numbers, dumping them into one single sequence. That's it. That's the whole trick — <em>"look inside each item's inner collection, and merge everything into one flat result."</em></p>
+
+            <p><code>Select()</code> is <strong>ONE-TO-ONE</strong>: one input element produces exactly one output element. <code>SelectMany()</code> is <strong>ONE-TO-MANY, FLATTENED</strong>: each input element can produce a WHOLE COLLECTION, and all those collections get merged into one single flat sequence.</p>
+            <p>This matters when your objects contain NESTED collections.</p>
+
+            <p>Suppose Article now has tags:</p>
+            <pre><code class="language-csharp">public class Article
+{
+    public List&lt;string&gt; Tags { get; set; }
+}
+
+articles[0].Tags = new List&lt;string&gt; { "sql", "database" };
+articles[1].Tags = new List&lt;string&gt; { "linq", "csharp" };
+articles[3].Tags = new List&lt;string&gt; { "sql", "performance" };</code></pre>
+
+            <p>Now — <em>"give me every tag used across every article, as one flat list."</em></p>
+
+            <div class="mistake-box">
+                <span class="mistake-title">WRONG TOOL (Select() alone):</span>
+                <pre><code class="language-csharp">var wrong = articles.Select(a =&gt; a.Tags).ToList();</code></pre>
+                <p>This gives you <code>List&lt;List&lt;string&gt;&gt;</code> — a list OF lists. Each article's tag-list stays nested and separate. Not what we want.</p>
             </div>
 
-            <div class="concept-block">
-                <h2 class="concept-title">Comprehensive Code: Where(), Select(), and SelectMany()</h2>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Real World Demonstrations</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// 1) Multiple conditions combined with &&
-var publishedByAuthor101 = articles
-    .Where(a => a.StatusId == 5 && a.AuthorId == 101)
-    .Select(a => a.Title)
+            <div class="code-container">
+                <div class="code-header"><span>RIGHT TOOL (SelectMany()):</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var allTags = articles
+    .SelectMany(a =&gt; a.Tags)
     .ToList();
 
-// 2) Chained Where calls (identical execution semantics to &&)
-var chained = articles
-    .Where(a => a.StatusId == 5)
-    .Where(a => a.AuthorId == 101)
-    .Select(a => a.Title)
-    .ToList();
+// Output: ["sql", "database", "linq", "csharp", "sql", "performance"]</code></pre>
+            </div>
+        </div>
 
-// 3) Optional / Conditional Filters (Search Screen Pattern)
-int? statusId = 5;
-int? authorId = 101;
-string titleContains = null;
+        <!-- ========================================================================= -->
+        <!-- PART 5: DEFERRED VS IMMEDIATE EXECUTION (02-notes.txt) -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part5">
+        <div class="concept-block">
+            <h2 class="concept-title">////////////////////////////////////////////////////////<br>DEFERRED VS IMMEDIATE EXECUTION (02-notes.txt)<br>////////////////////////////////////////////////////////</h2>
 
-IEnumerable&lt;Article&gt; query = articles;
+            <h3>-------------------------<br>what "DEFERRED" means ?<br>-------------------------</h3>
+            <pre><code class="language-csharp">var query = articles.Where(a =&gt; a.StatusId == 5);</code></pre>
+            <p>At this line, <strong>NOTHING is executed</strong>. <code>query</code> is not a result. It is a stored PLAN: <em>"when someone actually asks for values, loop through articles, and check StatusId == 5."</em></p>
+            <p>The plan only runs when something FORCES it to run. Things that force it:</p>
+            <ul>
+                <li><code>foreach</code> loop</li>
+                <li><code>.ToList()</code>, <code>.ToArray()</code>, <code>.ToDictionary()</code></li>
+                <li><code>.Count()</code>, <code>.Sum()</code>, <code>.Any()</code>, <code>.First()</code>, etc.</li>
+            </ul>
+
+            <h3>---------------------------------------------------<br>Methods that are lazy vs Methods that are immediate<br>---------------------------------------------------</h3>
+            <p><strong>LAZY (deferred)</strong> — return <code>IEnumerable&lt;T&gt;</code>, build up the plan, run nothing yet:</p>
+            <pre><code class="language-csharp">Where(), Select(), SelectMany(), OrderBy(), ThenBy(), Skip(), Take(), SkipWhile(), TakeWhile(), Distinct(), GroupBy(), Join(), Union(), Intersect(), Except(), etc...</code></pre>
+
+            <p><strong>IMMEDIATE (executes right away)</strong> — returns a concrete value or collection:</p>
+            <pre><code class="language-csharp">ToList(), ToArray(), ToDictionary(), ToHashSet(),
+Count(), Sum(), Average(), Min(), Max(),
+First(), FirstOrDefault(), Single(), SingleOrDefault(), Last(), LastOrDefault(), Any(), All(), Contains(),
+Aggregate()</code></pre>
+
+            <p><strong>Rule of thumb:</strong> if the return type is <code>IEnumerable&lt;T&gt;</code>, it's lazy. If it returns anything else (<code>int</code>, <code>bool</code>, <code>T</code>, <code>List&lt;T&gt;</code>...), it already had to run the loop to produce that value.</p>
+
+            <h3>----------------------------------------------------<br>PITFALL 1 — THE SOURCE CHANGES BEFORE YOU ENUMERATE<br>----------------------------------------------------</h3>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Pitfall 1 Code</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var query = articles.Where(a =&gt; a.StatusId == 5);
+
+articles.Add(new Article { ArticleId = 99, Title = "New One", StatusId = 5 });
+
+var result = query.ToList();   // "New One" IS included!</code></pre>
+            </div>
+            <p>Because <code>query</code> doesn't hold a snapshot of data — it holds a REFERENCE to <code>articles</code> and a set of instructions. When <code>.ToList()</code> finally runs the loop, it reads whatever is in <code>articles</code> AT THAT MOMENT — including the item you added afterward.</p>
+            <p>This can be a bug OR a feature depending on your intent:</p>
+            <ul>
+                <li><strong>BUG</strong> if you expected <code>query</code> to represent "articles as they were at the time I wrote that line."</li>
+                <li><strong>FEATURE</strong> if you actually wanted a "live view" that always reflects the current state of <code>articles</code> whenever enumerated.</li>
+            </ul>
+            <p>If you want a frozen snapshot, force execution immediately:</p>
+            <pre><code class="language-csharp">var query = articles.Where(a =&gt; a.StatusId == 5).ToList();  // snapshot NOW</code></pre>
+
+            <h3>----------------------------------------------------------------<br>PITFALL 2 — MULTIPLE ENUMERATION (running the SAME query twice)<br>----------------------------------------------------------------</h3>
+            <p>This is the most common real-world LINQ performance bug.</p>
+            <div class="mistake-box">
+                <span class="mistake-title">Double Loop Cost:</span>
+                <pre><code class="language-csharp">IEnumerable&lt;Article&gt; query = articles.Where(a =&gt; a.StatusId == 5);
+
+int count = query.Count();          // runs the loop ONCE (to count)
+List&lt;Article&gt; list = query.ToList(); // runs the loop AGAIN (to build the list)</code></pre>
+            </div>
+            <p>Two separate full passes over <code>articles</code>, because <code>query</code> is a lazy recipe — every time you "ask" it for something, it re-runs from scratch. For a small in-memory list this barely matters. But:</p>
+            <ul>
+                <li>If <code>articles</code> were coming from a slow source (a database call wrapped in a custom IEnumerable, a network request, a big file being read line-by-line), this means <strong>DOING THE EXPENSIVE WORK TWICE</strong>.</li>
+                <li>If the underlying data can change between calls (like Pitfall 1), <code>count</code> and <code>list.Count</code> might not even MATCH, because the two enumerations could see different data.</li>
+            </ul>
+            <p><strong>THE FIX — materialize ONCE, then reuse the materialized result:</strong></p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - The Fix</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">List&lt;Article&gt; list = articles.Where(a =&gt; a.StatusId == 5).ToList();  // runs ONCE
+int count = list.Count;              // just reads .Count property, no re-looping
+// reuse `list` everywhere else too, instead of re-querying `query`</code></pre>
+            </div>
+            <p>General guideline: if you're going to use a query's results MORE THAN ONCE, call <code>.ToList()</code> (or <code>.ToArray()</code>) on it first, and work with that materialized collection from then on.</p>
+
+            <h3>--------------------------------------------------------------<br>PITFALL 3 — ACCIDENTALLY RE-RUNNING EXPENSIVE LOGIC IN A LOOP<br>--------------------------------------------------------------</h3>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Pitfall 3 Code</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">IEnumerable&lt;Article&gt; published = articles.Where(a =&gt; a.StatusId == 5);
+
+foreach (var article in published)
+{
+    Console.WriteLine(article.Title);
+}
+
+// ... later in the same method ...
+
+foreach (var article in published)
+{
+    Console.WriteLine(article.Title.ToUpper());
+}</code></pre>
+            </div>
+            <p>Both <code>foreach</code> loops look fine individually, but each one causes a FULL re-execution of the <code>Where()</code> filter over <code>articles</code>, from scratch. If <code>Where()</code>'s condition involved something expensive (a method call, a calculation), that expensive work happens TWICE.</p>
+            <p>Same fix as Pitfall 2 — materialize once: <code>List&lt;Article&gt; published = articles.Where(a =&gt; a.StatusId == 5).ToList();</code></p>
+
+            <h3>----------------------------------------------------------------------<br>PITFALL 4 — CAPTURED VARIABLES CHANGE BEFORE ENUMERATION ("CLOSURE" TRAP)<br>-----------------------------------------------------------------------</h3>
+            <p>This one is sneaky. Lambdas can "capture" variables from outside themselves. If that outside variable changes BEFORE the query is enumerated, the query sees the NEW value, not the value at the time you wrote the line.</p>
+            <div class="mistake-box">
+                <span class="mistake-title">Closure Trap:</span>
+                <pre><code class="language-csharp">int minStatus = 5;
+var query = articles.Where(a =&gt; a.StatusId &gt;= minStatus);
+
+minStatus = 10;   // changed AFTER building the query, BEFORE running it
+
+var result = query.ToList();   // uses minStatus = 10, NOT 5!</code></pre>
+            </div>
+            <p><strong>Why?</strong> Because the lambda <code>a =&gt; a.StatusId &gt;= minStatus</code> doesn't capture the VALUE of <code>minStatus</code> at the time it was written — it captures the VARIABLE itself. When the query finally runs (at <code>.ToList()</code>), it reads whatever <code>minStatus</code> holds AT THAT MOMENT, which is now <code>10</code>.</p>
+            <p><strong>THE FIX</strong> — if you need to "lock in" the current value, copy it into a new local variable right before building the query, and don't mutate that copy afterward:</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - The Snapshot Fix</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">int minStatus = 5;
+int minStatusSnapshot = minStatus;             // freeze the value
+var query = articles.Where(a =&gt; a.StatusId &gt;= minStatusSnapshot);
+
+minStatus = 10;   // no longer affects the query --
+                   // query still uses minStatusSnapshot = 5</code></pre>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PART 6: COMPLETE SOURCE CODE - List-Pitfalls.cs -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part6">
+        <div class="concept-block">
+            <h2 class="concept-title">Part 6 — Complete Runnable Code: List-Pitfalls.cs (165 lines verbatim)</h2>
+            <p>Here is the entire, untruncated source code of <code>Desktop/Training/C#/LINQ/List-Pitfalls.cs</code>.</p>
+            
+            <div class="code-container">
+                <div class="code-header"><span>C# - Desktop/Training/C#/LINQ/List-Pitfalls.cs</span><button class="copy-btn">Copy Full Code</button></div>
+                <pre><code class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class Article
+{
+    public int ArticleId { get; set; }
+    public string Title { get; set; }
+    public int StatusId { get; set; }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        Pitfall1_SourceChangesBeforeEnumeration();
+        Pitfall2_MultipleEnumeration();
+        Pitfall4_ClosureCapturesVariableNotValue();
+        GoodUse_ShortCircuiting();
+    }
+
+    // ================================================================
+    // PITFALL 1 -- source changes AFTER building the query, BEFORE running it
+    // ================================================================
+    static void Pitfall1_SourceChangesBeforeEnumeration()
+    {
+        Console.WriteLine("========== PITFALL 1 -- source changes before enumeration ==========");
+
+        List&lt;Article&gt; articles = new List&lt;Article&gt;
+        {
+            new Article { ArticleId = 1, Title = "Intro to SQL", StatusId = 5 },
+            new Article { ArticleId = 2, Title = "Draft Notes",  StatusId = 1 },
+        };
+
+        var query = articles.Where(a =&gt; a.StatusId == 5);   // nothing runs yet
+
+        articles.Add(new Article { ArticleId = 3, Title = "New Published Article", StatusId = 5 });
+
+        var result = query.ToList();   // runs NOW -- sees the newly added article too
+
+        Console.WriteLine("Result includes the article added AFTER building the query:");
+        foreach (var a in result)
+            Console.WriteLine($"  {a.Title}");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // PITFALL 2 -- enumerating the same lazy query more than once
+    // ================================================================
+    static void Pitfall2_MultipleEnumeration()
+    {
+        Console.WriteLine("========== PITFALL 2 -- multiple enumeration ==========");
+
+        List&lt;Article&gt; articles = new List&lt;Article&gt;
+        {
+            new Article { ArticleId = 1, Title = "Intro to SQL", StatusId = 5 },
+            new Article { ArticleId = 2, Title = "Draft Notes",  StatusId = 1 },
+            new Article { ArticleId = 3, Title = "SQL Perf",     StatusId = 5 },
+        };
+
+        int callCount = 0;
+
+        // We attach a side effect (callCount++) inside the predicate just so we can PROVE
+        // how many times the filter logic actually runs -- this is only for demonstration.
+        IEnumerable&lt;Article&gt; query = articles.Where(a =&gt;
+        {
+            callCount++;
+            return a.StatusId == 5;
+        });
+
+        int count = query.Count();          // enumeration #1 -- loops through all 3 articles
+        List&lt;Article&gt; list = query.ToList(); // enumeration #2 -- loops through all 3 articles AGAIN
+
+        Console.WriteLine($"Predicate was evaluated {callCount} times (3 articles x 2 enumerations = 6)");
+        Console.WriteLine($"Count() result: {count}, ToList() result count: {list.Count}");
+        Console.WriteLine();
+
+        // ---- THE FIX ----
+        callCount = 0;
+        List&lt;Article&gt; materialized = articles.Where(a =&gt;
+        {
+            callCount++;
+            return a.StatusId == 5;
+        }).ToList();   // runs ONCE here
+
+        int countFromList = materialized.Count;       // just reads a property, no re-looping
+        List&lt;Article&gt; sameList = materialized;          // just reusing the same list, no re-looping
+
+        Console.WriteLine("After fix (materialize once with ToList(), then reuse):");
+        Console.WriteLine($"Predicate was evaluated {callCount} times (only 3, one pass)");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // PITFALL 4 -- lambda captures the VARIABLE, not the value at write-time
+    // ================================================================
+    static void Pitfall4_ClosureCapturesVariableNotValue()
+    {
+        Console.WriteLine("========== PITFALL 4 -- closure captures variable, not value ==========");
+
+        List&lt;Article&gt; articles = new List&lt;Article&gt;
+        {
+            new Article { ArticleId = 1, Title = "Status 1", StatusId = 1 },
+            new Article { ArticleId = 2, Title = "Status 5", StatusId = 5 },
+            new Article { ArticleId = 3, Title = "Status 10", StatusId = 10 },
+        };
+
+        int minStatus = 5;
+        var query = articles.Where(a =&gt; a.StatusId &gt;= minStatus);   // built when minStatus == 5
+
+        minStatus = 10;   // changed AFTER building the query, BEFORE enumerating it
+
+        var result = query.ToList();   // uses minStatus == 10 now, NOT 5!
+
+        Console.WriteLine("Query built when minStatus was 5, but ran after minStatus became 10:");
+        foreach (var a in result)
+            Console.WriteLine($"  {a.Title}");   // only "Status 10" shows up, not "Status 5" too
+
+        // ---- THE FIX -- freeze the value into its own local copy ----
+        int minStatusFixed = 5;
+        int frozenValue = minStatusFixed;   // snapshot taken right here
+        var fixedQuery = articles.Where(a =&gt; a.StatusId &gt;= frozenValue);
+
+        minStatusFixed = 10;   // no longer affects fixedQuery, because frozenValue already locked in 5
+
+        var fixedResult = fixedQuery.ToList();
+
+        Console.WriteLine("\nAfter fix (value frozen into its own variable before building the query):");
+        foreach (var a in fixedResult)
+            Console.WriteLine($"  {a.Title}");   // now correctly shows both "Status 5" and "Status 10"
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // GOOD USE OF LAZINESS -- short-circuiting with First()
+    // ================================================================
+    static void GoodUse_ShortCircuiting()
+    {
+        Console.WriteLine("========== GOOD USE -- short-circuiting ==========");
+
+        List&lt;Article&gt; articles = new List&lt;Article&gt;
+        {
+            new Article { ArticleId = 1, Title = "First Published", StatusId = 5 },
+            new Article { ArticleId = 2, Title = "Draft",            StatusId = 1 },
+            new Article { ArticleId = 3, Title = "Second Published", StatusId = 5 },
+        };
+
+        int itemsChecked = 0;
+
+        var firstMatch = articles.Where(a =&gt;
+        {
+            itemsChecked++;
+            return a.StatusId == 5;
+        }).First();   // stops as soon as the FIRST match is found
+
+        Console.WriteLine($"First match: {firstMatch.Title}");
+        Console.WriteLine($"Items actually checked before stopping: {itemsChecked}");
+        // itemsChecked will be 1, NOT 3 -- proving Where()+First() didn't process
+        // the whole list, it stopped the moment article #1 matched.
+        Console.WriteLine();
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PART 7: COMPLETE SOURCE CODE - List.cs -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part7">
+        <div class="concept-block">
+            <h2 class="concept-title">Part 7 — Complete Runnable Code: List.cs (All 11 Lessons, 571 lines verbatim)</h2>
+            <p>Here is the entire, untruncated source code of <code>Desktop/Training/C#/LINQ/List.cs</code>.</p>
+
+            <div class="code-container">
+                <div class="code-header"><span>C# - Desktop/Training/C#/LINQ/List.cs</span><button class="copy-btn">Copy Full Code</button></div>
+                <pre><code class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class Article
+{
+    public int ArticleId { get; set; }
+    public string Title { get; set; }
+    public int StatusId { get; set; }      // 5 = Published, 1 = Draft
+    public int AuthorId { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public string Summary { get; set; }
+    public List&lt;string&gt; Tags { get; set; } = new List&lt;string&gt;();
+}
+
+public class Author
+{
+    public int AuthorId { get; set; }
+    public string Name { get; set; }
+}
+
+public class ArticleDto
+{
+    public string Title { get; set; }
+    public string AuthorName { get; set; }
+}
+
+public class Program
+{
+    static List&lt;Article&gt; articles = new List&lt;Article&gt;
+    {
+        new Article { ArticleId = 1, Title = "Intro to SQL",    StatusId = 5, AuthorId = 101, CreatedDate = new DateTime(2024,1,10), Summary = "Learn SQL basics",     Tags = new List&lt;string&gt;{ "sql", "database" } },
+        new Article { ArticleId = 2, Title = "Advanced LINQ",   StatusId = 5, AuthorId = 102, CreatedDate = new DateTime(2024,3,15), Summary = null,                   Tags = new List&lt;string&gt;{ "linq", "csharp" } },
+        new Article { ArticleId = 3, Title = "Draft Notes",     StatusId = 1, AuthorId = 101, CreatedDate = new DateTime(2024,2,20), Summary = "Not ready yet",        Tags = new List&lt;string&gt;() },
+        new Article { ArticleId = 4, Title = "SQL Performance", StatusId = 5, AuthorId = 101, CreatedDate = new DateTime(2024,4,5),  Summary = "Tuning SQL queries",   Tags = new List&lt;string&gt;{ "sql", "performance" } },
+        new Article { ArticleId = 5, Title = "C# Basics",       StatusId = 5, AuthorId = 103, CreatedDate = new DateTime(2024,5,1),  Summary = null,                   Tags = new List&lt;string&gt;{ "csharp" } },
+        new Article { ArticleId = 6, Title = "SQL Joins",       StatusId = 1, AuthorId = 102, CreatedDate = new DateTime(2024,6,12), Summary = "Inner vs outer joins", Tags = new List&lt;string&gt;{ "sql" } },
+    };
+
+    static List&lt;Author&gt; authors = new List&lt;Author&gt;
+    {
+        new Author { AuthorId = 101, Name = "Riya" },
+        new Author { AuthorId = 102, Name = "Karan" },
+        new Author { AuthorId = 103, Name = "Meera" },
+        // Note: AuthorId 104 exists here on purpose but has NO articles -&gt; used in GroupJoin/left-join examples
+        new Author { AuthorId = 104, Name = "Zoya" },
+    };
+
+    public static void Main()
+    {
+        Lesson3_Where();
+        Lesson4_SelectAndSelectMany();
+        Lesson5_OrderBy();
+        Lesson6_SkipTake();
+        Lesson7_FirstSingleLast();
+        Lesson8_AnyAllContains();
+        Lesson9_Aggregates();
+        Lesson10_AggregateFunc();
+        Lesson11_GroupBy();
+        Lesson12_SetOperations();
+        Lesson13_Join();
+    }
+
+    // Small helper just to keep printing consistent everywhere below
+    static void Print(string label, System.Collections.IEnumerable items)
+    {
+        Console.WriteLine(label);
+        foreach (var item in items)
+            Console.WriteLine("  " + item);
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // LESSON 3 -- Where() variations
+    // ================================================================
+    static void Lesson3_Where()
+    {
+        Console.WriteLine("========== LESSON 3 -- Where() ==========\n");
+
+        // 1) Basic Where() -- simple condition
+        var published = articles.Where(a =&gt; a.StatusId == 5).Select(a =&gt; a.Title).ToList();
+        Print("1) Published only:", published);
+
+        // 2) Indexed Where() -- uses position in the sequence
+        var everyOther = articles.Where((a, index) =&gt; index % 2 == 0).Select(a =&gt; a.Title).ToList();
+        Print("2) Every other article (by position):", everyOther);
+
+        // 3) Multiple conditions in ONE Where() using &&
+        var publishedByAuthor101 = articles
+            .Where(a =&gt; a.StatusId == 5 && a.AuthorId == 101)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("3) Published AND AuthorId 101:", publishedByAuthor101);
+
+        // 4) Multiple conditions using ||
+        var author102Or103 = articles
+            .Where(a =&gt; a.AuthorId == 102 || a.AuthorId == 103)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("4) AuthorId 102 OR 103:", author102Or103);
+
+        // 5) Chaining multiple Where() calls -- same result as combining with &&
+        var chained = articles
+            .Where(a =&gt; a.StatusId == 5)
+            .Where(a =&gt; a.AuthorId == 101)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("5) Chained Where() (Published, then AuthorId 101):", chained);
+
+        // 6) Null-safe filtering -- guard before calling a method on a possibly-null property
+        var summariesWithSql = articles
+            .Where(a =&gt; a.Summary != null && a.Summary.Contains("SQL"))
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("6) Summary contains 'SQL' (null-safe):", summariesWithSql);
+
+        // 7) Optional / conditional filters -- typical search-screen pattern
+        int? statusId = 5;
+        int? authorId = 101;
+        string titleContains = null;
+
+        IEnumerable&lt;Article&gt; query = articles;
+
+        if (statusId.HasValue)
+            query = query.Where(a =&gt; a.StatusId == statusId.Value);
+
+        if (authorId.HasValue)
+            query = query.Where(a =&gt; a.AuthorId == authorId.Value);
+
+        if (!string.IsNullOrWhiteSpace(titleContains))
+            query = query.Where(a =&gt; a.Title.Contains(titleContains, StringComparison.OrdinalIgnoreCase));
+
+        var searchResult = query.Select(a =&gt; a.Title).ToList();
+        Print("7) Optional filters applied (statusId=5, authorId=101):", searchResult);
+    }
+
+
+    // ================================================================
+    // LESSON 4 -- Select() and SelectMany() variations
+    // ================================================================
+    static void Lesson4_SelectAndSelectMany()
+    {
+        Console.WriteLine("========== LESSON 4 -- Select() / SelectMany() ==========\n");
+
+        // 1) Select() into a single property
+        var titlesOnly = articles.Select(a =&gt; a.Title).ToList();
+        Print("1) Just the titles:", titlesOnly);
+
+        // 2) Select() into an anonymous type -- quick, local-only shape
+        var titleAndAuthor = articles.Select(a =&gt; new { a.Title, a.AuthorId }).ToList();
+        Print("2) Title + AuthorId (anonymous type):",
+            titleAndAuthor.Select(x =&gt; $"{x.Title} - Author {x.AuthorId}"));
+
+        // 3) Select() into a DTO class -- reusable, nameable shape
+        var dtos = articles.Select(a =&gt; new ArticleDto
+        {
+            Title = a.Title,
+            AuthorName = "Author #" + a.AuthorId
+        }).ToList();
+        Print("3) Title + AuthorName (DTO):", dtos.Select(d =&gt; $"{d.Title} - {d.AuthorName}"));
+
+        // 4) Indexed Select() -- uses position in the sequence
+        var numbered = articles.Select((a, index) =&gt; $"{index + 1}. {a.Title}").ToList();
+        Print("4) Numbered titles:", numbered);
+
+        // 5) Where() + Select() combined -- filter first, then shape
+        var publishedTitles = articles
+            .Where(a =&gt; a.StatusId == 5)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("5) Titles of published articles only:", publishedTitles);
+
+        // 6) SelectMany() -- flatten a nested collection (Tags per article) into one flat list
+        var allTags = articles.SelectMany(a =&gt; a.Tags).ToList();
+        Print("6) All tags, flattened:", allTags);
+    }
+
+
+    // ================================================================
+    // LESSON 5 -- OrderBy() / OrderByDescending() / ThenBy() variations
+    // ================================================================
+    static void Lesson5_OrderBy()
+    {
+        Console.WriteLine("========== LESSON 5 -- OrderBy() ==========\n");
+
+        // 1) OrderBy() -- ascending sort by one key
+        var byTitleAsc = articles.OrderBy(a =&gt; a.Title).Select(a =&gt; a.Title).ToList();
+        Print("1) Sorted by Title (ascending):", byTitleAsc);
+
+        // 2) OrderByDescending() -- descending sort by one key
+        var byDateDesc = articles.OrderByDescending(a =&gt; a.CreatedDate)
+            .Select(a =&gt; $"{a.Title} ({a.CreatedDate:yyyy-MM-dd})").ToList();
+        Print("2) Sorted by CreatedDate (newest first):", byDateDesc);
+
+        // 3) ThenBy() -- secondary sort key, used AFTER OrderBy()
+        // Sort by AuthorId first, then by Title within each author
+        var byAuthorThenTitle = articles
+            .OrderBy(a =&gt; a.AuthorId)
+            .ThenBy(a =&gt; a.Title)
+            .Select(a =&gt; $"Author {a.AuthorId}: {a.Title}")
+            .ToList();
+        Print("3) Sorted by AuthorId, then Title:", byAuthorThenTitle);
+
+        // 4) ThenByDescending() -- secondary key, but descending
+        var byStatusThenNewest = articles
+            .OrderBy(a =&gt; a.StatusId)
+            .ThenByDescending(a =&gt; a.CreatedDate)
+            .Select(a =&gt; $"Status {a.StatusId}: {a.Title} ({a.CreatedDate:yyyy-MM-dd})")
+            .ToList();
+        Print("4) Sorted by StatusId, then CreatedDate descending:", byStatusThenNewest);
+
+        // IMPORTANT: don't chain OrderBy().OrderBy() to add a second key -- the second
+        // OrderBy() call REPLACES the first sort instead of adding to it.
+        // Always use ThenBy()/ThenByDescending() after the first OrderBy()/OrderByDescending().
+    }
+
+
+    // ================================================================
+    // LESSON 6 -- Skip() / Take() / paging variations
+    // ================================================================
+    static void Lesson6_SkipTake()
+    {
+        Console.WriteLine("========== LESSON 6 -- Skip() / Take() ==========\n");
+
+        // 1) Take() -- first N elements
+        var firstThree = articles.Take(3).Select(a =&gt; a.Title).ToList();
+        Print("1) First 3 articles:", firstThree);
+
+        // 2) Skip() -- skip the first N elements, keep the rest
+        var skipFirstTwo = articles.Skip(2).Select(a =&gt; a.Title).ToList();
+        Print("2) Skip first 2 articles:", skipFirstTwo);
+
+        // 3) Skip() + Take() together -- classic PAGINATION pattern
+        int pageNumber = 2;   // 1-based page number
+        int pageSize = 2;
+        var page2 = articles
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("3) Page 2 (pageSize=2):", page2);
+
+        // 4) TakeWhile() -- take elements only WHILE a condition is true, stop at first failure
+        // (order matters here -- based on original list order, not sorted)
+        var takeWhilePublished = articles
+            .TakeWhile(a =&gt; a.StatusId == 5)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("4) TakeWhile StatusId==5 (stops at first non-match):", takeWhilePublished);
+
+        // 5) SkipWhile() -- skip elements WHILE a condition is true, then take everything after
+        var skipWhilePublished = articles
+            .SkipWhile(a =&gt; a.StatusId == 5)
+            .Select(a =&gt; a.Title)
+            .ToList();
+        Print("5) SkipWhile StatusId==5 (skips until first non-match, keeps rest):", skipWhilePublished);
+    }
+
+
+    // ================================================================
+    // LESSON 7 -- First / FirstOrDefault / Single / SingleOrDefault / Last variations
+    // ================================================================
+    static void Lesson7_FirstSingleLast()
+    {
+        Console.WriteLine("========== LESSON 7 -- First / Single / Last ==========\n");
+
+        // 1) First() -- returns the first match, THROWS if none found
+        var first = articles.First(a =&gt; a.StatusId == 5);
+        Console.WriteLine($"1) First published: {first.Title}");
+
+        // 2) FirstOrDefault() -- returns the first match, or null (default) if none found -- SAFE
+        var firstDraftOrNull = articles.FirstOrDefault(a =&gt; a.StatusId == 99); // no article has StatusId 99
+        Console.WriteLine($"2) FirstOrDefault StatusId==99: {(firstDraftOrNull == null ? "null (not found)" : firstDraftOrNull.Title)}");
+
+        // 3) Single() -- expects EXACTLY ONE match; throws if zero OR more than one match
+        var singleAuthor103 = articles.Single(a =&gt; a.AuthorId == 103);
+        Console.WriteLine($"3) Single article by AuthorId 103: {singleAuthor103.Title}");
+
+        // 4) SingleOrDefault() -- same as Single(), but returns null instead of throwing when there are ZERO matches
+        //    (still throws if there is MORE THAN ONE match)
+        var singleOrDefaultNoMatch = articles.SingleOrDefault(a =&gt; a.AuthorId == 999);
+        Console.WriteLine($"4) SingleOrDefault AuthorId==999: {(singleOrDefaultNoMatch == null ? "null (not found)" : singleOrDefaultNoMatch.Title)}");
+
+        // 5) Last() -- returns the last match, THROWS if none found
+        var last = articles.Last(a =&gt; a.StatusId == 5);
+        Console.WriteLine($"5) Last published: {last.Title}");
+
+        // 6) LastOrDefault() -- returns the last match, or null if none found -- SAFE
+        var lastOrDefault = articles.LastOrDefault(a =&gt; a.StatusId == 99);
+        Console.WriteLine($"6) LastOrDefault StatusId==99: {(lastOrDefault == null ? "null (not found)" : lastOrDefault.Title)}");
+        Console.WriteLine();
+
+        // RULE OF THUMB:
+        //  - Use First/FirstOrDefault when you expect possibly-many matches and just want ANY one (usually the first).
+        //  - Use Single/SingleOrDefault when your logic GUARANTEES at most one match (e.g. lookup by unique ID) --
+        //    it acts as a safety check: if there's accidentally more than one, it throws instead of silently picking one.
+        //  - Always prefer the "OrDefault" version unless you are certain a match must exist.
+    }
+
+
+    // ================================================================
+    // LESSON 8 -- Any() / All() / Contains() variations
+    // ================================================================
+    static void Lesson8_AnyAllContains()
+    {
+        Console.WriteLine("========== LESSON 8 -- Any() / All() / Contains() ==========\n");
+
+        // 1) Any() with no argument -- "does the collection have ANY elements at all?"
+        bool hasAnyArticles = articles.Any();
+        Console.WriteLine($"1) Has any articles at all: {hasAnyArticles}");
+
+        // 2) Any() with a predicate -- "does AT LEAST ONE element match this condition?"
+        bool hasAnyDrafts = articles.Any(a =&gt; a.StatusId == 1);
+        Console.WriteLine($"2) Has any drafts: {hasAnyDrafts}");
+
+        // 3) All() -- "do ALL elements match this condition?"
+        bool allPublished = articles.All(a =&gt; a.StatusId == 5);
+        Console.WriteLine($"3) Are all articles published: {allPublished}");
+
+        // 4) All() on an empty filtered set -- returns TRUE (this surprises beginners!)
+        var noResults = articles.Where(a =&gt; a.StatusId == 999);
+        bool allTrueOnEmpty = noResults.All(a =&gt; a.StatusId == 5);
+        Console.WriteLine($"4) All() on an empty sequence (vacuously true): {allTrueOnEmpty}");
+
+        // 5) Contains() -- checks if a specific VALUE exists in a simple collection (e.g. list of ints/strings)
+        var allTags = articles.SelectMany(a =&gt; a.Tags).ToList();
+        bool hasSqlTag = allTags.Contains("sql");
+        Console.WriteLine($"5) Tag list contains 'sql': {hasSqlTag}");
+        Console.WriteLine();
+
+        // NOTE: Contains() on a list of OBJECTS (like List&lt;Article&gt;) checks reference/equality,
+        // not a specific property 
+        
+    }
+
+
+    // ================================================================
+    // LESSON 9 -- Count / Sum / Average / Min / Max variations
+    // ================================================================
+    static void Lesson9_Aggregates()
+    {
+        Console.WriteLine("========== LESSON 9 -- Count / Sum / Average / Min / Max ==========\n");
+
+        // 1) Count() with no argument -- total number of elements
+        int totalArticles = articles.Count();
+        Console.WriteLine($"1) Total articles: {totalArticles}");
+
+        // 2) Count() with a predicate -- count only matching elements
+        int publishedCount = articles.Count(a =&gt; a.StatusId == 5);
+        Console.WriteLine($"2) Published article count: {publishedCount}");
+
+        // 3) Sum() -- add up a numeric property across all elements
+        int totalTagCount = articles.Sum(a =&gt; a.Tags.Count);
+        Console.WriteLine($"3) Total tags across all articles: {totalTagCount}");
+
+        // 4) Average() -- average of a numeric property
+        double averageTagsPerArticle = articles.Average(a =&gt; a.Tags.Count);
+        Console.WriteLine($"4) Average tags per article: {averageTagsPerArticle:F2}");
+
+        // 5) Min() / Max() on a simple numeric projection
+        DateTime earliest = articles.Min(a =&gt; a.CreatedDate);
+        DateTime latest = articles.Max(a =&gt; a.CreatedDate);
+        Console.WriteLine($"5) Earliest: {earliest:yyyy-MM-dd}, Latest: {latest:yyyy-MM-dd}");
+
+        // 6) MinBy() / MaxBy() -- get the WHOLE ELEMENT with the min/max key (not just the key value)
+        //    (Available in .NET 6+)
+        var oldestArticle = articles.MinBy(a =&gt; a.CreatedDate);
+        var newestArticle = articles.MaxBy(a =&gt; a.CreatedDate);
+        Console.WriteLine($"6) Oldest article: {oldestArticle.Title}, Newest article: {newestArticle.Title}");
+        Console.WriteLine();
+
+        // Sum()/Count() are safe on empty collections and give you 0.
+        // Average()/Min()/Max() are NOT safe — they throw an exception on empty collections.
+    }
+
+
+    // ================================================================
+    // LESSON 10 -- Aggregate() variations (custom accumulator / reduce-style)
+    // ================================================================
+    static void Lesson10_AggregateFunc()
+    {
+        Console.WriteLine("========== LESSON 10 -- Aggregate() ==========\n");
+
+        // 1) Aggregate() WITHOUT a seed -- starts with the first element as the accumulator
+        // Example: concatenate all titles into one string, comma-separated
+
+        // suppose titles:- ["C#", "LINQ", "ASP", "MYSQL"]
+        // for first:- accumulator: "C#", current: "LINQ"
+        // ans:- "C#, LINQ, ASP, MYSQL"
+        string allTitlesConcatenated = articles
+            .Select(a =&gt; a.Title)
+            .Aggregate((accumulator, current) =&gt; accumulator + ", " + current);
+        Console.WriteLine($"1) All titles concatenated: {allTitlesConcatenated}");
+
+        // 2) Aggregate() WITH a seed -- starts the accumulator at a known initial value
+        // Example: sum of tag counts, starting from 0 (equivalent to Sum(), shown manually here)
+        int totalTags = articles.Aggregate(0, (accumulator, article) =&gt; accumulator + article.Tags.Count);
+        Console.WriteLine($"2) Total tags (via Aggregate with seed 0): {totalTags}");
+
+        // 3) Aggregate() WITH a seed AND a result selector -- transform the final accumulated value
+        // Example: build up total tag count, then format it into a sentence at the end
+        string summarySentence = articles.Aggregate(
+            0,                                                   // seed
+            (accumulator, article) =&gt; accumulator + article.Tags.Count,  // accumulation step
+            finalCount =&gt; $"There are {finalCount} tags in total."       // result selector (runs once, at the end)
+        );
+        Console.WriteLine($"3) {summarySentence}");
+        Console.WriteLine();
+
+        // WHEN TO USE Aggregate() vs Sum()/Count()/etc:
+        // Use the built-in Sum/Count/Min/Max/Average when they already do what you need --
+        // they are clearer and less error-prone. Reach for Aggregate() only when your
+        // accumulation logic is CUSTOM and doesn't match any built-in method
+        // (e.g. building a concatenated string, running a custom running total with rules, etc).
+    }
+
+
+    // ================================================================
+    // LESSON 11 -- GroupBy() variations
+    // ================================================================
+    static void Lesson11_GroupBy()
+    {
+        Console.WriteLine("========== LESSON 11 -- GroupBy() ==========\n");
+
+        // 1) Basic GroupBy() -- group articles by AuthorId
+        // The result is a sequence of IGrouping&lt;TKey, TElement&gt; -- each group has a .Key
+        // and behaves like an IEnumerable&lt;Article&gt; of just that group's items.
+        var byAuthor = articles.GroupBy(a =&gt; a.AuthorId);
+        Console.WriteLine("1) Articles grouped by AuthorId:");
+        foreach (var group in byAuthor)
+        {
+            Console.WriteLine($"   AuthorId {group.Key}:");
+            foreach (var article in group)
+                Console.WriteLine($"     - {article.Title}");
+        }
+        Console.WriteLine();
+
+        // 2) GroupBy() + Select() -- shape each group into a summary object (very common pattern)
+        var authorSummary = articles
+            .GroupBy(a =&gt; a.AuthorId)
+            .Select(g =&gt; new
+            {
+                AuthorId = g.Key,
+                ArticleCount = g.Count(),
+                Titles = g.Select(a =&gt; a.Title).ToList()
+            })
+            .ToList();
+        Console.WriteLine("2) Summary per author:");
+        foreach (var s in authorSummary)
+            Console.WriteLine($"   Author {s.AuthorId}: {s.ArticleCount} article(s) -&gt; {string.Join(", ", s.Titles)}");
+        Console.WriteLine();
+
+        // 3) GroupBy() with a computed/composite key -- group by StatusId AND AuthorId together
+        var byStatusAndAuthor = articles.GroupBy(a =&gt; new { a.StatusId, a.AuthorId });
+        Console.WriteLine("3) Grouped by StatusId + AuthorId combined:");
+        foreach (var group in byStatusAndAuthor)
+            Console.WriteLine($"   Status {group.Key.StatusId}, Author {group.Key.AuthorId}: {group.Count()} article(s)");
+        Console.WriteLine();
+
+        // 4) GroupBy() + ordering the groups themselves (e.g. show authors with most articles first)
+        var orderedGroups = articles
+            .GroupBy(a =&gt; a.AuthorId)
+            .OrderByDescending(g =&gt; g.Count())
+            .ToList();
+        Console.WriteLine("4) Authors ordered by article count (descending):");
+        foreach (var group in orderedGroups)
+            Console.WriteLine($"   Author {group.Key}: {group.Count()} article(s)");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // LESSON 12 -- Distinct / Union / Intersect / Except variations
+    // ================================================================
+    static void Lesson12_SetOperations()
+    {
+        Console.WriteLine("========== LESSON 12 -- Distinct / Union / Intersect / Except ==========\n");
+
+        // 1) Distinct() -- removes duplicate VALUES from a simple sequence
+        var allTagsWithDuplicates = articles.SelectMany(a =&gt; a.Tags).ToList();
+        var uniqueTags = allTagsWithDuplicates.Distinct().ToList();
+        Print("1) All tags (with duplicates):", allTagsWithDuplicates);
+        Print("   Unique tags (Distinct):", uniqueTags);
+
+        // Sets used for the next three examples
+        List&lt;int&gt; teamAAuthorIds = new List&lt;int&gt; { 101, 102, 103 };
+        List&lt;int&gt; teamBAuthorIds = new List&lt;int&gt; { 102, 103, 104 };
+
+        // 2) Union() -- combines two sequences, removing duplicates (like a mathematical "OR")
+        var allAuthorIdsUnion = teamAAuthorIds.Union(teamBAuthorIds).ToList();
+        Print("2) Union of Team A and Team B author IDs:", allAuthorIdsUnion);
+
+        // 3) Intersect() -- only elements present in BOTH sequences (like a mathematical "AND")
+        var commonAuthorIds = teamAAuthorIds.Intersect(teamBAuthorIds).ToList();
+        Print("3) Intersect (authors in BOTH teams):", commonAuthorIds);
+
+        // 4) Except() -- elements in the first sequence that are NOT in the second (set subtraction)
+        var onlyInTeamA = teamAAuthorIds.Except(teamBAuthorIds).ToList();
+        Print("4) Except (in Team A but NOT in Team B):", onlyInTeamA);
+
+        // 5) Distinct() with objects -- needs a custom equality approach, since Article doesn't
+        // define value-equality by default. Common workaround: project down to a comparable key first.
+        var distinctStatusIds = articles.Select(a =&gt; a.StatusId).Distinct().ToList();
+        Print("5) Distinct StatusId values used across articles:", distinctStatusIds);
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // LESSON 13 -- Join() / GroupJoin() variations
+    // ================================================================
+    static void Lesson13_Join()
+    {
+        Console.WriteLine("========== LESSON 13 -- Join() / GroupJoin() ==========\n");
+
+        // 1) Join() -- INNER JOIN style: only matches where the key exists on BOTH sides
+        var innerJoin = articles.Join(
+            authors,                          // the collection to join with
+            article =&gt; article.AuthorId,      // key selector from the LEFT side (articles)
+            author =&gt; author.AuthorId,        // key selector from the RIGHT side (authors)
+            (article, author) =&gt; new { article.Title, author.Name }   // how to combine a matched pair
+        ).ToList();
+        Console.WriteLine("1) Inner Join (article + matching author name):");
+        foreach (var item in innerJoin)
+            Console.WriteLine($"   {item.Title} -&gt; {item.Name}");
+        Console.WriteLine();
+        // Note: Author "Zoya" (104) has no articles, so she never appears here --
+        // that's expected inner-join behavior: unmatched rows on either side are dropped.
+
+        // 2) GroupJoin() -- LEFT-JOIN style: keeps ALL authors, even ones with zero articles,
+        // grouping their matching articles into a list (empty list if none match)
+        var groupJoin = authors.GroupJoin(
+            articles,
+            author =&gt; author.AuthorId,
+            article =&gt; article.AuthorId,
+            (author, matchedArticles) =&gt; new { author.Name, Articles = matchedArticles.ToList() }
+        ).ToList();
+        Console.WriteLine("2) GroupJoin (every author, with their articles or an empty list):");
+        foreach (var item in groupJoin)
+        {
+            string titles = item.Articles.Any()
+                ? string.Join(", ", item.Articles.Select(a =&gt; a.Title))
+                : "(no articles)";
+            Console.WriteLine($"   {item.Name}: {titles}");
+        }
+        Console.WriteLine();
+
+        // 3) GroupJoin() + SelectMany() with DefaultIfEmpty() -- the standard way to build a
+        // TRUE "LEFT JOIN" flattened result (one row per article, but authors with no articles
+        // still appear once with a null article)
+        var leftJoinFlattened = authors
+            .GroupJoin(
+                articles,
+                author =&gt; author.AuthorId,
+                article =&gt; article.AuthorId,
+                (author, matchedArticles) =&gt; new { author, matchedArticles })
+            .SelectMany(
+                x =&gt; x.matchedArticles.DefaultIfEmpty(),   // if no articles, yield one "null" placeholder
+                (x, article) =&gt; new
+                {
+                    AuthorName = x.author.Name,
+                    ArticleTitle = article == null ? "(no articles)" : article.Title
+                })
+            .ToList();
+        Console.WriteLine("3) True left-join flattened (one row per article, authors with none still shown):");
+        foreach (var row in leftJoinFlattened)
+            Console.WriteLine($"   {row.AuthorName} -&gt; {row.ArticleTitle}");
+        Console.WriteLine();
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PART 8: LINQ TO DATATABLE (03-notes.txt) -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part8">
+        <div class="concept-block">
+            <h2 class="concept-title">=-=-=-=-=-==-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-<br>LINQ TO DATATABLE (03-notes.txt)<br>=-=-=-=-=-==-=-=-=-=-==-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</h2>
+
+            <h3>----------------------------------------<br>WHY DATATABLE NEEDS SPECIAL TREATMENT ?<br>----------------------------------------</h3>
+            <pre><code class="language-csharp">DataTable.Rows   ──►  returns a DataRowCollection</code></pre>
+
+            <p><code>DataRowCollection</code> implements the OLD, non-generic <code>IEnumerable</code> (not <code>IEnumerable&lt;T&gt;</code>). LINQ's extension methods (<code>Where</code>, <code>Select</code>, etc.) are defined on <code>IEnumerable&lt;T&gt;</code>. So this will NOT compile:</p>
+            <pre><code class="language-csharp">dataTable.Rows.Where(r =&gt; ...);   // ERROR: 'Where' not found</code></pre>
+
+            <p>To fix this, .NET provides an extension method:</p>
+            <pre><code class="language-csharp">dataTable.AsEnumerable()   ──►  returns IEnumerable&lt;DataRow&gt;</code></pre>
+
+            <p>Once you have <code>IEnumerable&lt;DataRow&gt;</code>, every LINQ method works exactly like it did on <code>List&lt;Article&gt;</code> — because the underlying mechanism is identical.</p>
+
+            <p><strong>IMPORTANT:</strong> <code>AsEnumerable()</code> requires: <code>using System.Data;</code></p>
+
+            <h3>---------------------------------------------<br>READING VALUES OUT OF A DataRow -- Field&lt;T&gt;()<br>---------------------------------------------</h3>
+            <p>A DataRow doesn't give you typed properties like <code>article.Title</code>. Instead, columns are accessed by name, and the values come back as <code>object</code>, requiring a cast. This is clunky:</p>
+            <pre><code class="language-csharp">string title = (string)row["Title"];
+int statusId = (int)row["StatusId"];</code></pre>
+
+            <p>.NET gives us a cleaner, safer helper: <code>Field&lt;T&gt;()</code></p>
+            <pre><code class="language-csharp">string title = row.Field&lt;string&gt;("Title");
+int statusId = row.Field&lt;int&gt;("StatusId");</code></pre>
+
+            <p><code>Field&lt;T&gt;()</code> does the casting for you, AND handles <code>DBNull.Value</code> properly (explained next) — always prefer <code>Field&lt;T&gt;()</code> over a raw cast.</p>
+
+            <h3>---------------------------------------------------<br>HANDLING DBNull -- THE DATATABLE VERSION OF "null"<br>---------------------------------------------------</h3>
+            <p>In a DataTable, a missing/empty value isn't C# <code>null</code> — it's a special marker object called <code>DBNull.Value</code>.</p>
+            <pre><code class="language-csharp">string summary = row.Field&lt;string&gt;("Summary");
+// if the column is a nullable string column, Field&lt;string&gt; correctly returns C# null when the cell is DBNull -- no crash</code></pre>
+
+            <p><code>string</code> is a reference type. Reference types are ALLOWED to be null on their own, naturally — no special nullable wrapper needed.</p>
+
+            <p>But for <strong>VALUE TYPES</strong> (<code>int</code>, <code>DateTime</code>, <code>bool</code>, etc.), if the column allows nulls, you must use the <strong>NULLABLE</strong> version of <code>Field&lt;T&gt;</code>:</p>
+            <pre><code class="language-csharp">int? statusId = row.Field&lt;int?&gt;("StatusId");   // handles DBNull safely
 
 if (statusId.HasValue)
-    query = query.Where(a => a.StatusId == statusId.Value);
-
-if (authorId.HasValue)
-    query = query.Where(a => a.AuthorId == authorId.Value);
-
-if (!string.IsNullOrWhiteSpace(titleContains))
-    query = query.Where(a => a.Title.Contains(titleContains, StringComparison.OrdinalIgnoreCase));
-
-var searchResults = query.Select(a => a.Title).ToList();</code></pre>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- TAB 3: OPERATORS REFERENCE -->
-        <div id="tab-operators" class="topic-tab-content">
-            
-            <div class="concept-block">
-                <h2 class="concept-title">Lessons 5–13 — Standard Operators Reference</h2>
-                <p>The following examples demonstrate the full operator suite using our standard domain dataset (<code>Article</code> and <code>Author</code>).</p>
-
-                <h3>Lesson 5 — Ordering: OrderBy(), OrderByDescending(), ThenBy()</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Sorting Variations</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// 1) Ascending sort
-var byTitleAsc = articles.OrderBy(a => a.Title).ToList();
-
-// 2) Descending sort
-var byDateDesc = articles.OrderByDescending(a => a.CreatedDate).ToList();
-
-// 3) Secondary sorting: ThenBy() / ThenByDescending()
-var byAuthorThenTitle = articles
-    .OrderBy(a => a.AuthorId)
-    .ThenBy(a => a.Title)
-    .ToList();</code></pre>
-                </div>
-                <div class="mistake-box">
-                    <span class="mistake-title">CRITICAL MISTAKE: Never chain OrderBy().OrderBy()</span>
-                    <p>Writing <code>articles.OrderBy(a => a.AuthorId).OrderBy(a => a.Title)</code> is incorrect. The second <code>OrderBy()</code> call completely overwrites the first sort instead of refining it. Always use <code>ThenBy()</code> or <code>ThenByDescending()</code> for secondary sort keys.</p>
-                </div>
-
-                <h3>Lesson 6 — Paging & Partitioning: Skip(), Take(), SkipWhile(), TakeWhile()</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Pagination Pattern</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// Standard Web API Pagination: Page 2 with PageSize 2
-int pageNumber = 2;   // 1-based page index
-int pageSize = 2;
-
-var page2 = articles
-    .Skip((pageNumber - 1) * pageSize)
-    .Take(pageSize)
-    .Select(a => a.Title)
-    .ToList();
-
-// TakeWhile: takes elements while condition holds, stops at first failure
-var takeWhilePublished = articles.TakeWhile(a => a.StatusId == 5).ToList();
-
-// SkipWhile: skips elements while condition holds, then takes all remaining
-var skipWhilePublished = articles.SkipWhile(a => a.StatusId == 5).ToList();</code></pre>
-                </div>
-
-                <h3>Lesson 7 — Element Operators: First, Single, Last</h3>
-                <table class="linq-table">
-                    <thead>
-                        <tr>
-                            <th>Method</th>
-                            <th>Matches Found = 0</th>
-                            <th>Matches Found = 1</th>
-                            <th>Matches Found &gt; 1</th>
-                            <th>Recommended Use</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>First()</code></td>
-                            <td>Throws <code>InvalidOperationException</code></td>
-                            <td>Returns element</td>
-                            <td>Returns first element</td>
-                            <td>When at least one match MUST exist</td>
-                        </tr>
-                        <tr>
-                            <td><code>FirstOrDefault()</code></td>
-                            <td>Returns <code>null</code> / default</td>
-                            <td>Returns element</td>
-                            <td>Returns first element</td>
-                            <td>Safest general choice when match is optional</td>
-                        </tr>
-                        <tr>
-                            <td><code>Single()</code></td>
-                            <td>Throws <code>InvalidOperationException</code></td>
-                            <td>Returns element</td>
-                            <td>Throws <code>InvalidOperationException</code></td>
-                            <td>Lookup by unique key (enforces uniqueness)</td>
-                        </tr>
-                        <tr>
-                            <td><code>SingleOrDefault()</code></td>
-                            <td>Returns <code>null</code> / default</td>
-                            <td>Returns element</td>
-                            <td>Throws <code>InvalidOperationException</code></td>
-                            <td>Unique key lookup where record may not exist</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Element Operators Code</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// FirstOrDefault: safe fallback
-var firstDraft = articles.FirstOrDefault(a => a.StatusId == 99); // returns null
-
-// Single: enforces exactly 1 match
-var singleAuthor103 = articles.Single(a => a.AuthorId == 103);</code></pre>
-                </div>
-
-                <h3>Lesson 8 — Quantifiers: Any(), All(), Contains()</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Quantifiers</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// 1) Does collection contain ANY elements?
-bool hasArticles = articles.Any();
-
-// 2) Does at least one element match?
-bool hasDrafts = articles.Any(a => a.StatusId == 1);
-
-// 3) Do ALL elements match?
-bool allPublished = articles.All(a => a.StatusId == 5);
-
-// 4) Contains() on simple value sequence
-var allTags = articles.SelectMany(a => a.Tags).ToList();
-bool hasSql = allTags.Contains("sql");</code></pre>
-                </div>
-                <div class="advanced-box">
-                    <span class="advanced-title">Gotcha: Vacuous Truth in All()</span>
-                    <p>Calling <code>All()</code> on an empty sequence returns <code>true</code>! E.g.: <code>articles.Where(a => a.StatusId == 999).All(a => a.StatusId == 5)</code> evaluates to <code>true</code> because there are no elements violating the condition.</p>
-                </div>
-
-                <h3>Lesson 9 & 10 — Aggregation & Custom Fold: Count, Sum, Average, Min, Max, Aggregate</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Aggregation Code</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">int totalArticles = articles.Count();
-int publishedCount = articles.Count(a => a.StatusId == 5);
-int totalTags = articles.Sum(a => a.Tags.Count);
-double avgTags = articles.Average(a => a.Tags.Count);
-
-// .NET 6+ MinBy / MaxBy (returns the actual object, not just scalar key)
-Article oldestArticle = articles.MinBy(a => a.CreatedDate);
-Article newestArticle = articles.MaxBy(a => a.CreatedDate);
-
-// Aggregate() - custom accumulator (Fold / Reduce)
-// 1) Concatenate titles with comma
-string concatenated = articles
-    .Select(a => a.Title)
-    .Aggregate((acc, cur) => acc + ", " + cur);
-
-// 2) Aggregate with seed value (0) and result selector
-string summary = articles.Aggregate(
-    0,
-    (acc, a) => acc + a.Tags.Count,
-    total => $"Total tags across articles: {total}");</code></pre>
-                </div>
-
-                <h3>Lesson 11 — Grouping: GroupBy()</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - GroupBy Examples</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// 1) Basic GroupBy returns IEnumerable&lt;IGrouping&lt;TKey, TElement&gt;&gt;
-var byAuthor = articles.GroupBy(a => a.AuthorId);
-
-// 2) GroupBy + Select into summary objects
-var authorSummary = articles
-    .GroupBy(a => a.AuthorId)
-    .Select(g => new
-    {
-        AuthorId = g.Key,
-        ArticleCount = g.Count(),
-        Titles = g.Select(a => a.Title).ToList()
-    })
-    .ToList();
-
-// 3) Group by composite key
-var byStatusAndAuthor = articles.GroupBy(a => new { a.StatusId, a.AuthorId });
-
-// 4) Ordering groups by aggregate count
-var orderedGroups = articles
-    .GroupBy(a => a.AuthorId)
-    .OrderByDescending(g => g.Count())
-    .ToList();</code></pre>
-                </div>
-
-                <h3>Lesson 12 — Set Operations: Distinct, Union, Intersect, Except</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Set Operations</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;int&gt; teamA = new List&lt;int&gt; { 101, 102, 103 };
-List&lt;int&gt; teamB = new List&lt;int&gt; { 102, 103, 104 };
-
-// Distinct: removes duplicate values
-var uniqueTags = articles.SelectMany(a => a.Tags).Distinct().ToList();
-
-// Union: combines sets, eliminating duplicates (Mathematical OR)
-var allTeamIds = teamA.Union(teamB).ToList(); // [101, 102, 103, 104]
-
-// Intersect: only elements present in BOTH (Mathematical AND)
-var commonIds = teamA.Intersect(teamB).ToList(); // [102, 103]
-
-// Except: elements in first set NOT in second (Set Difference)
-var onlyInA = teamA.Except(teamB).ToList(); // [101]</code></pre>
-                </div>
-
-                <h3>Lesson 13 — Relational Joins: Join, GroupJoin, Left Outer Join</h3>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Joins Code</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">// 1) Inner Join: only matches where key exists on BOTH sides
-var innerJoin = articles.Join(
-    authors,
-    article => article.AuthorId,
-    author => author.AuthorId,
-    (article, author) => new { article.Title, author.Name }
-).ToList();
-
-// 2) GroupJoin (Hierarchical / Left Join): keeps ALL authors, pairing each with their articles
-var groupJoin = authors.GroupJoin(
-    articles,
-    author => author.AuthorId,
-    article => article.AuthorId,
-    (author, matchedArticles) => new { author.Name, Articles = matchedArticles.ToList() }
-).ToList();
-
-// 3) True Flattened Left Outer Join: GroupJoin + SelectMany + DefaultIfEmpty
-var leftJoinFlattened = authors
-    .GroupJoin(
-        articles,
-        author => author.AuthorId,
-        article => article.AuthorId,
-        (author, matchedArticles) => new { author, matchedArticles })
-    .SelectMany(
-        x => x.matchedArticles.DefaultIfEmpty(),
-        (x, article) => new
-        {
-            AuthorName = x.author.Name,
-            ArticleTitle = article == null ? "(no articles)" : article.Title
-        })
-    .ToList();</code></pre>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- TAB 4: DEFERRED & PITFALLS -->
-        <div id="tab-deferred-pitfalls" class="topic-tab-content">
-            
-            <div class="concept-block">
-                <h2 class="concept-title">Deferred vs Immediate Execution</h2>
-                <p>When you write:</p>
-                <pre><code class="language-csharp">var query = articles.Where(a => a.StatusId == 5);</code></pre>
-                <p>At this line, <strong>NOTHING is executed</strong>. <code>query</code> is not a list or a result set. It is a stored <strong>PLAN</strong>: <em>"when someone actually asks for values, loop through articles, and yield items where StatusId == 5."</em></p>
-                
-                <p>The plan only executes when an operation forces enumeration:</p>
-                <ul>
-                    <li>A <code>foreach</code> loop</li>
-                    <li>Conversion methods: <code>.ToList()</code>, <code>.ToArray()</code>, <code>.ToDictionary()</code>, <code>.ToHashSet()</code></li>
-                    <li>Scalar aggregators: <code>.Count()</code>, <code>.Sum()</code>, <code>.Average()</code>, <code>.Min()</code>, <code>.Max()</code></li>
-                    <li>Element pickers: <code>.First()</code>, <code>.FirstOrDefault()</code>, <code>.Single()</code>, <code>.Any()</code>, <code>.All()</code></li>
-                </ul>
-
-                <h3>Categorization Table</h3>
-                <table class="linq-table">
-                    <thead>
-                        <tr>
-                            <th>Execution Type</th>
-                            <th>Return Type</th>
-                            <th>Methods</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>LAZY (Deferred)</strong><br>Builds execution recipe; runs nothing immediately</td>
-                            <td><code>IEnumerable&lt;T&gt;</code> / <code>IOrderedEnumerable&lt;T&gt;</code></td>
-                            <td><code>Where</code>, <code>Select</code>, <code>SelectMany</code>, <code>OrderBy</code>, <code>ThenBy</code>, <code>Skip</code>, <code>Take</code>, <code>SkipWhile</code>, <code>TakeWhile</code>, <code>Distinct</code>, <code>GroupBy</code>, <code>Join</code>, <code>GroupJoin</code>, <code>Union</code>, <code>Intersect</code>, <code>Except</code></td>
-                        </tr>
-                        <tr>
-                            <td><strong>IMMEDIATE</strong><br>Executes loop right away to produce concrete data</td>
-                            <td>Concrete collection (<code>List&lt;T&gt;</code>, <code>T[]</code>) or scalar (<code>int</code>, <code>bool</code>, <code>T</code>)</td>
-                            <td><code>ToList</code>, <code>ToArray</code>, <code>ToDictionary</code>, <code>ToHashSet</code>, <code>Count</code>, <code>Sum</code>, <code>Average</code>, <code>Min</code>, <code>Max</code>, <code>First</code>, <code>FirstOrDefault</code>, <code>Single</code>, <code>SingleOrDefault</code>, <code>Last</code>, <code>LastOrDefault</code>, <code>Any</code>, <code>All</code>, <code>Contains</code>, <code>Aggregate</code></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="concept-block">
-                <h2 class="concept-title">Four Real-World LINQ Pitfalls (With Code Proofs)</h2>
-
-                <h3>Pitfall 1 — Source Changes Before Enumeration</h3>
-                <p>Because lazy queries store a reference rather than a snapshot, mutating the source before materializing includes the modified data.</p>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Pitfall 1 Code Proof</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;Article&gt; articles = new List&lt;Article&gt;
 {
-    new Article { ArticleId = 1, Title = "Intro to SQL", StatusId = 5 },
-    new Article { ArticleId = 2, Title = "Draft Notes",  StatusId = 1 }
-};
+    Console.WriteLine(statusId.Value);
+}</code></pre>
 
-var query = articles.Where(a => a.StatusId == 5); // Unfired recipe
+            <p>If you instead write <code>row.Field&lt;int&gt;("StatusId")</code> on a column that actually contains <code>DBNull</code>, it throws an exception at runtime. So:</p>
+            <p><strong>RULE: if a column might contain nulls, always read it as <code>T?</code>.</strong></p>
 
-// Mutate source collection AFTER building query
-articles.Add(new Article { ArticleId = 3, Title = "New Article", StatusId = 5 });
+            <p>When <code>Field&lt;T&gt;()</code> reads a <code>DBNull</code> cell, it needs to hand you back something that means "empty." What it hands back depends entirely on what <code>T</code> is CAPABLE of representing:</p>
+            <ul>
+                <li><code>Field&lt;string&gt;("Summary")</code> — since string can already legally be null, <code>Field&lt;T&gt;()</code> can just give you null directly. No problem, no special type needed.</li>
+                <li><code>Field&lt;int&gt;("StatusId")</code> — since plain int CANNOT be null, there's no valid int value to return for "this was empty." <code>Field&lt;T&gt;()</code> has no choice but to throw, because you asked for a type that's structurally incapable of representing "nothing."</li>
+                <li><code>Field&lt;int?&gt;("StatusId")</code> — now you're asking for the nullable version, which DOES have a slot for "no value" (<code>HasValue == false</code>). So <code>Field&lt;T&gt;()</code> can safely hand back a proper "empty" result instead of crashing.</li>
+            </ul>
 
-var result = query.ToList(); // Runs NOW: Includes "New Article"!
+            <h3>----------------------------------------<br>NOW -- APPLYING WHAT WE ALREADY KNOW<br>----------------------------------------</h3>
+            <p>Once you have <code>IEnumerable&lt;DataRow&gt;</code> via <code>AsEnumerable()</code>, literally <strong>EVERYTHING</strong> works the same way:</p>
+            <pre><code class="language-csharp">var published = dataTable.AsEnumerable()
+    .Where(row =&gt; row.Field&lt;int&gt;("StatusId") == 5)
+    .ToList();</code></pre>
+            <p>Filtering, projecting, sorting, grouping, joining — all identical concepts. The only difference is HOW you read a value out of each "item" (<code>Field&lt;T&gt;("ColumnName")</code> instead of <code>a.PropertyName</code>).</p>
 
-// FIX: If you need an immutable snapshot at definition time, call .ToList() immediately:
-var snapshot = articles.Where(a => a.StatusId == 5).ToList();</code></pre>
-                </div>
-
-                <h3>Pitfall 2 — Multiple Enumeration (The #1 LINQ Bug)</h3>
-                <p>Executing multiple operations against the same lazy <code>IEnumerable&lt;T&gt;</code> re-runs the entire pipeline from scratch on every call.</p>
-                <div class="mistake-box">
-                    <span class="mistake-title">WRONG (Evaluates predicate 2x times per item):</span>
-                    <pre><code class="language-csharp">int callCount = 0;
-IEnumerable&lt;Article&gt; query = articles.Where(a =>
-{
-    callCount++; // Side-effect to prove re-execution
-    return a.StatusId == 5;
-});
-
-int count = query.Count();           // Pass 1: checks all 3 items (callCount = 3)
-List&lt;Article&gt; list = query.ToList(); // Pass 2: checks all 3 items AGAIN (callCount = 6!)</code></pre>
-                </div>
-                <div class="code-container">
-                    <div class="code-header"><span>THE FIX: Materialize once with .ToList()</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;Article&gt; materialized = articles.Where(a => a.StatusId == 5).ToList(); // Runs ONCE
-
-int countFromList = materialized.Count; // O(1) property read, zero loop passes
-// Reuse 'materialized' everywhere else</code></pre>
-                </div>
-
-                <h3>Pitfall 3 — Accidentally Re-running Expensive Logic in Loops</h3>
-                <p>Iterating over an unmaterialized <code>IEnumerable&lt;T&gt;</code> in multiple <code>foreach</code> loops repeats heavy database/CPU calculations twice. Always materialize once into a <code>List&lt;T&gt;</code> before multiple loops.</p>
-
-                <h3>Pitfall 4 — Closure Trap (Captured Variables Change Before Enumeration)</h3>
-                <p>Lambdas capture the <strong>variable reference</strong>, not the write-time value.</p>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Closure Trap Proof & Fix</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">int minStatus = 5;
-var query = articles.Where(a => a.StatusId >= minStatus);
-
-minStatus = 10; // Variable mutated BEFORE enumeration!
-
-var result = query.ToList(); // Evaluates with minStatus = 10, NOT 5!
-
-// ---- THE FIX: Freeze value into a local snapshot variable ----
-int minStatusFixed = 5;
-int frozenValue = minStatusFixed; // Snapshot captured here
-var fixedQuery = articles.Where(a => a.StatusId >= frozenValue);
-
-minStatusFixed = 10; // Does not affect fixedQuery! Result uses 5.</code></pre>
-                </div>
-
-                <h3>Good Use of Laziness — Short-Circuiting</h3>
-                <p>Lazy evaluation allows LINQ to stop early the moment an answer is found, avoiding processing the rest of the list.</p>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Short-Circuiting Proof</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">int itemsChecked = 0;
-var firstMatch = articles.Where(a =>
-{
-    itemsChecked++;
-    return a.StatusId == 5;
-}).First(); // Stops immediately when article #1 matches!
-
-// itemsChecked will be 1, NOT the total list count!</code></pre>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- TAB 5: LINQ TO DATATABLE -->
-        <div id="tab-datatable" class="topic-tab-content">
-            
-            <div class="concept-block">
-                <h2 class="concept-title">LINQ to DataTable Deep Dive</h2>
-                
-                <h3>Why DataTable Needs Special Treatment</h3>
-                <p><code>DataTable.Rows</code> returns a <code>DataRowCollection</code>, which implements the old .NET 1.0 non-generic <code>IEnumerable</code>. Because LINQ methods are extension methods on <code>IEnumerable&lt;T&gt;</code>, calling LINQ directly fails:</p>
-                <pre><code class="language-csharp">dataTable.Rows.Where(r => ...); // COMPILE ERROR: 'Where' not found!</code></pre>
-
-                <p>To enable LINQ, .NET provides an extension method inside <code>System.Data.DataSetExtensions</code>:</p>
-                <pre><code class="language-csharp">using System.Data;
-
-IEnumerable&lt;DataRow&gt; rows = dataTable.AsEnumerable(); // Unlocks ALL LINQ methods!</code></pre>
-
-                <h3>Reading Values & Handling DBNull with Field&lt;T&gt;()</h3>
-                <p>Standard raw indexing (<code>(string)row["Title"]</code>) returns untyped <code>object</code> and crashes on nulls. Always use <code>row.Field&lt;T&gt;("ColumnName")</code>:</p>
-                
-                <table class="linq-table">
-                    <thead>
-                        <tr>
-                            <th>Data Type</th>
-                            <th>Field&lt;T&gt; Syntax</th>
-                            <th>Behavior on DBNull.Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Reference Types (e.g. <code>string</code>)</td>
-                            <td><code>row.Field&lt;string&gt;("Summary")</code></td>
-                            <td>Returns C# <code>null</code> cleanly without crashing.</td>
-                        </tr>
-                        <tr>
-                            <td>Non-Nullable Value Types (e.g. <code>int</code>)</td>
-                            <td><code>row.Field&lt;int&gt;("StatusId")</code></td>
-                            <td><strong>THROWS exception</strong> if cell contains <code>DBNull</code>! (int cannot hold null).</td>
-                        </tr>
-                        <tr>
-                            <td>Nullable Value Types (e.g. <code>int?</code>)</td>
-                            <td><code>row.Field&lt;int?&gt;("StatusId")</code></td>
-                            <td>Safely returns <code>null</code> (<code>HasValue == false</code>).</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="callout callout-info">
-                    <span class="callout-title">Golden Rule for DataTable Columns</span>
-                    <p>If a value-type column can ever contain nulls in the database, <strong>always</strong> read it as nullable: <code>row.Field&lt;int?&gt;("Col")</code> or <code>row.Field&lt;DateTime?&gt;("Col")</code>.</p>
-                </div>
-            </div>
-
-            <div class="concept-block">
-                <h2 class="concept-title">Recommended Pattern: Projecting DataRow into a Typed Class</h2>
-                <p>Avoid scattering <code>row.Field&lt;T&gt;()</code> throughout your application. Project <code>DataTable</code> rows into typed DTOs/models once at the data-access boundary:</p>
-                
-                <div class="code-container">
-                    <div class="code-header"><span>C# - DataRow to Typed Object Projection</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">List&lt;Article&gt; articles = dataTable.AsEnumerable()
-    .Select(row => new Article
+            <h3>----------------------------------------<br>PROJECTING A DataRow INTO A TYPED OBJECT<br>----------------------------------------</h3>
+            <p>A very common real pattern: convert loose DataRows into a proper typed class as early as possible, then work with LINQ on THAT list using everything you already know — cleaner than sprinkling <code>Field&lt;T&gt;()</code> calls everywhere.</p>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Recommended Pattern</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var articles = dataTable.AsEnumerable()
+    .Select(row =&gt; new Article
     {
         ArticleId = row.Field&lt;int&gt;("ArticleId"),
         Title     = row.Field&lt;string&gt;("Title"),
@@ -793,42 +1414,55 @@ IEnumerable&lt;DataRow&gt; rows = dataTable.AsEnumerable(); // Unlocks ALL LINQ 
     })
     .ToList();
 
-// From this point onward, work with clean, type-safe List&lt;Article&gt; LINQ!</code></pre>
-                </div>
+// From here on, treat `articles` exactly like 
+// it's a plain List&lt;Article&gt; now.</code></pre>
+            </div>
+            <p>This is usually the <strong>RECOMMENDED</strong> approach: convert once, near the data-access boundary, and keep the rest of your application working with clean typed objects instead of <code>DataRow</code>/<code>Field&lt;T&gt;()</code> everywhere.</p>
+
+            <h3>----------------------------------------------------<br>GOING BACK -- LIST&lt;T&gt; TO DATATABLE (CopyToDataTable)<br>----------------------------------------------------</h3>
+            <p>Sometimes you need to go the OTHER direction: you have LINQ query results (as <code>IEnumerable&lt;DataRow&gt;</code>) and need a real DataTable again — e.g. to bind to a legacy grid control, or export to Excel/CSV via DataTable-based tooling.</p>
+            <pre><code class="language-csharp">DataTable filteredTable = dataTable.AsEnumerable()
+    .Where(row =&gt; row.Field&lt;int&gt;("StatusId") == 5)
+    .CopyToDataTable();</code></pre>
+
+            <div class="mistake-box">
+                <span class="mistake-title">IMPORTANT</span>
+                <p><code>CopyToDataTable()</code> THROWS an exception if the source sequence is EMPTY (no rows matched) — there's no schema information to build an empty table from a zero-row sequence. Always check first:</p>
             </div>
 
-            <div class="concept-block">
-                <h2 class="concept-title">Converting Back to DataTable: CopyToDataTable() & The Empty Bug</h2>
-                <p>When you need to export LINQ results back to legacy controls or tools, use <code>CopyToDataTable()</code>.</p>
-                <div class="mistake-box">
-                    <span class="mistake-title">DANGER: CopyToDataTable() Throws on Empty Sequences</span>
-                    <p>If zero rows match your filter, <code>CopyToDataTable()</code> throws <code>InvalidOperationException</code> because an empty sequence provides no row schema to construct the table.</p>
-                </div>
+            <div class="code-container">
+                <div class="code-header"><span>C# - Safe CopyToDataTable Guard</span><button class="copy-btn">Copy</button></div>
+                <pre><code class="language-csharp">var filteredRows = dataTable.AsEnumerable().Where(row =&gt; row.Field&lt;int&gt;("StatusId") == 5);
 
-                <div class="code-container">
-                    <div class="code-header"><span>C# - The Safe CopyToDataTable Pattern</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">var filteredRows = dataTable.AsEnumerable().Where(row => row.Field&lt;int&gt;("StatusId") == 5);
-
-// Guard with Any() and use Clone() as safe empty fallback:
-DataTable resultTable = filteredRows.Any()
+DataTable result = filteredRows.Any()
     ? filteredRows.CopyToDataTable()
-    : dataTable.Clone(); // Clone() copies schema with zero rows -- 100% crash proof!</code></pre>
-                </div>
-
-                <h3>Four Common Mistakes with DataTable + LINQ</h3>
-                <ol>
-                    <li><strong>Forgetting <code>AsEnumerable()</code>:</strong> <code>dataTable.Rows.Where(...)</code> fails to compile.</li>
-                    <li><strong>Using <code>Field&lt;int&gt;()</code> on nullable columns:</strong> Throws runtime exception when encountering <code>DBNull</code>. Use <code>Field&lt;int?&gt;()</code>.</li>
-                    <li><strong>Unguarded <code>CopyToDataTable()</code>:</strong> Crashes on 0 matching rows. Guard with <code>Any() ? ... : dataTable.Clone()</code>.</li>
-                    <li><strong>Raw type casting (<code>(string)row["Title"]</code>):</strong> Fragile, untyped, and fails to handle <code>DBNull</code> safely. Always prefer <code>Field&lt;T&gt;()</code>.</li>
-                </ol>
+    : dataTable.Clone();   // Clone() copies just the SCHEMA, zero rows -- safe empty fallback</code></pre>
             </div>
 
-            <div class="concept-block">
-                <h2 class="concept-title">Complete Runnable Program: Datatable.cs</h2>
-                <div class="code-container">
-                    <div class="code-header"><span>C# - Datatable.cs Complete Implementation</span><button class="copy-btn">Copy</button></div>
-                    <pre><code class="language-csharp">using System;
+            <h3>----------------------------------------<br>COMMON MISTAKES WITH DataTable + LINQ<br>----------------------------------------</h3>
+            <ul>
+                <li><strong>MISTAKE 1 -- forgetting AsEnumerable() entirely:</strong><br>
+                <code>dataTable.Rows.Where(...)</code> ──► compile error</li>
+                <li><strong>MISTAKE 2 -- using Field&lt;int&gt;() on a column that can contain DBNull:</strong><br>
+                <code>row.Field&lt;int&gt;("StatusId")</code> ──► throws if the cell is DBNull (fix: <code>row.Field&lt;int?&gt;("StatusId")</code>)</li>
+                <li><strong>MISTAKE 3 -- calling CopyToDataTable() on a possibly-empty query:</strong><br>
+                <code>query.CopyToDataTable();</code> ──► throws InvalidOperationException if query has 0 rows (fix: check <code>query.Any()</code> first, or use <code>dataTable.Clone()</code> as a fallback)</li>
+                <li><strong>MISTAKE 4 -- raw casting instead of Field&lt;T&gt;():</strong><br>
+                <code>string title = (string)row["Title"];</code> ──► works, but doesn't handle DBNull safely or read as cleanly as <code>Field&lt;T&gt;()</code></li>
+            </ul>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- PART 9: COMPLETE SOURCE CODE - Datatable.cs -->
+        <!-- ========================================================================= -->
+        <hr class="section-divider" id="part9">
+        <div class="concept-block">
+            <h2 class="concept-title">Part 9 — Complete Runnable Code: Datatable.cs (214 lines verbatim)</h2>
+            <p>Here is the entire, untruncated source code of <code>Desktop/Training/C#/LINQ/Datatable.cs</code>.</p>
+
+            <div class="code-container">
+                <div class="code-header"><span>C# - Desktop/Training/C#/LINQ/Datatable.cs</span><button class="copy-btn">Copy Full Code</button></div>
+                <pre><code class="language-csharp">using System;
 using System.Data;
 using System.Linq;
 using System.Collections.Generic;
@@ -847,67 +1481,202 @@ public class Program
     {
         DataTable dataTable = BuildSampleDataTable();
 
-        // 1. AsEnumerable() basics
-        IEnumerable&lt;DataRow&gt; rows = dataTable.AsEnumerable();
-        Console.WriteLine($"Total rows: {rows.Count()}");
-
-        // 2. Field&lt;T&gt; and DBNull handling
-        foreach (DataRow row in dataTable.AsEnumerable())
-        {
-            int articleId = row.Field&lt;int&gt;("ArticleId");
-            string summary = row.Field&lt;string&gt;("Summary") ?? "(no summary)";
-            Console.WriteLine($"ArticleId {articleId}: {summary}");
-        }
-
-        // 3. Where & Select directly on DataRows
-        var publishedTitles = dataTable.AsEnumerable()
-            .Where(row => row.Field&lt;int&gt;("StatusId") == 5)
-            .Select(row => row.Field&lt;string&gt;("Title"))
-            .ToList();
-
-        // 4. Project DataRows into typed objects (Recommended pattern)
-        List&lt;Article&gt; articles = dataTable.AsEnumerable()
-            .Select(row => new Article
-            {
-                ArticleId = row.Field&lt;int&gt;("ArticleId"),
-                Title     = row.Field&lt;string&gt;("Title"),
-                StatusId  = row.Field&lt;int&gt;("StatusId"),
-                AuthorId  = row.Field&lt;int&gt;("AuthorId")
-            })
-            .ToList();
-
-        // 5. OrderBy & GroupBy on DataRows
-        var grouped = dataTable.AsEnumerable()
-            .GroupBy(row => row.Field&lt;int&gt;("AuthorId"))
-            .Select(g => new { AuthorId = g.Key, Count = g.Count() })
-            .ToList();
-
-        // 6. Safe CopyToDataTable with Clone() fallback
-        var matchRows = dataTable.AsEnumerable().Where(r => r.Field&lt;int&gt;("StatusId") == 5);
-        DataTable safeTable = matchRows.Any() ? matchRows.CopyToDataTable() : dataTable.Clone();
+        Section1_AsEnumerableBasics(dataTable);
+        Section2_FieldAndDBNull(dataTable);
+        Section3_WhereAndSelect(dataTable);
+        Section4_ProjectToTypedClass(dataTable);
+        Section5_OrderByAndGroupBy(dataTable);
+        Section6_CopyBackToDataTable(dataTable);
     }
 
+    // Build a sample DataTable manually, the way it might come back from a DB query
     static DataTable BuildSampleDataTable()
     {
         DataTable table = new DataTable("Articles");
+
         table.Columns.Add("ArticleId", typeof(int));
         table.Columns.Add("Title", typeof(string));
         table.Columns.Add("StatusId", typeof(int));
         table.Columns.Add("AuthorId", typeof(int));
-        table.Columns.Add("Summary", typeof(string)); // Contains DBNull for some rows
+        table.Columns.Add("Summary", typeof(string));   // this column will contain DBNull for some rows
 
         table.Rows.Add(1, "Intro to SQL", 5, 101, "Learn SQL basics");
-        table.Rows.Add(2, "Advanced LINQ", 5, 102, DBNull.Value);
+        table.Rows.Add(2, "Advanced LINQ", 5, 102, DBNull.Value);   // no summary provided
         table.Rows.Add(3, "Draft Notes", 1, 101, "Not ready yet");
         table.Rows.Add(4, "SQL Performance", 5, 101, "Tuning SQL queries");
         table.Rows.Add(5, "C# Basics", 5, 103, DBNull.Value);
 
         return table;
     }
-}</code></pre>
-                </div>
-            </div>
 
+
+    // ================================================================
+    // SECTION 1 -- AsEnumerable() basics -- required before any LINQ works
+    // ================================================================
+    static void Section1_AsEnumerableBasics(DataTable dataTable)
+    {
+        Console.WriteLine("========== SECTION 1 -- AsEnumerable() basics ==========");
+
+        // dataTable.Rows.Where(...) would NOT compile -- DataRowCollection is not IEnumerable&lt;T&gt;.
+        // AsEnumerable() converts it into IEnumerable&lt;DataRow&gt;, unlocking every LINQ method.
+        IEnumerable&lt;DataRow&gt; rows = dataTable.AsEnumerable();
+
+        int totalRows = rows.Count();
+        Console.WriteLine($"Total rows via AsEnumerable().Count(): {totalRows}");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // SECTION 2 -- Field&lt;T&gt;() and handling DBNull
+    // ================================================================
+    static void Section2_FieldAndDBNull(DataTable dataTable)
+    {
+        Console.WriteLine("========== SECTION 2 -- Field&lt;T&gt;() and DBNull ==========");
+
+        foreach (DataRow row in dataTable.AsEnumerable())
+        {
+            // Field&lt;int&gt;() is safe here because ArticleId never contains DBNull in this table
+            int articleId = row.Field&lt;int&gt;("ArticleId");
+
+            // Field&lt;string&gt;() naturally returns C# null when the cell is DBNull -- no crash
+            string summary = row.Field&lt;string&gt;("Summary");
+
+            // If summary is not null, use summary; otherwise use "(no summary)".
+            string summaryDisplay = summary ?? "(no summary)";
+            Console.WriteLine($"  ArticleId {articleId}: {summaryDisplay}");
+        }
+        Console.WriteLine();
+
+        // If StatusId column COULD contain DBNull, you must read it as int? (nullable), not int:
+        //   int? statusId = row.Field&lt;int?&gt;("StatusId");
+        // Reading a nullable-capable column with Field&lt;int&gt;() (non-nullable) throws at runtime
+        // if it actually hits a DBNull value.
+    }
+
+
+    // ================================================================
+    // SECTION 3 -- Where() and Select() directly on DataRows
+    // ================================================================
+    static void Section3_WhereAndSelect(DataTable dataTable)
+    {
+        Console.WriteLine("========== SECTION 3 -- Where() / Select() on DataRows ==========");
+
+        // Filter: published articles only (StatusId == 5)
+        var publishedTitles = dataTable.AsEnumerable()
+            .Where(row =&gt; row.Field&lt;int&gt;("StatusId") == 5)
+            .Select(row =&gt; row.Field&lt;string&gt;("Title"))
+            .ToList();
+
+        Console.WriteLine("Published article titles:");
+        foreach (var title in publishedTitles)
+            Console.WriteLine($"  {title}");
+        Console.WriteLine();
+
+        // Filter with null-safe check on Summary
+        var withSummary = dataTable.AsEnumerable()
+            .Where(row =&gt; row.Field&lt;string&gt;("Summary") != null)
+            .Select(row =&gt; row.Field&lt;string&gt;("Title"))
+            .ToList();
+
+        Console.WriteLine("Articles that HAVE a summary:");
+        foreach (var title in withSummary)
+            Console.WriteLine($"  {title}");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // SECTION 4 -- projecting DataRows into a proper typed class
+    // ================================================================
+    static void Section4_ProjectToTypedClass(DataTable dataTable)
+    {
+        Console.WriteLine("========== SECTION 4 -- Project DataRows into Article objects ==========");
+
+        // This is the recommended pattern: convert once, work with typed objects afterward
+        List&lt;Article&gt; articles = dataTable.AsEnumerable()
+            .Select(row =&gt; new Article
+            {
+                ArticleId = row.Field&lt;int&gt;("ArticleId"),
+                Title = row.Field&lt;string&gt;("Title"),
+                StatusId = row.Field&lt;int&gt;("StatusId"),
+                AuthorId = row.Field&lt;int&gt;("AuthorId")
+            })
+            .ToList();
+
+        // From here on, this is a PLAIN List&lt;Article&gt; -- everything from Lessons 3-14 applies directly
+        var publishedByAuthor101 = articles
+            .Where(a =&gt; a.StatusId == 5 && a.AuthorId == 101)
+            .Select(a =&gt; a.Title)
+            .ToList();
+
+        Console.WriteLine("Published articles by AuthorId 101 (using normal List&lt;Article&gt; LINQ now):");
+        foreach (var title in publishedByAuthor101)
+            Console.WriteLine($"  {title}");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // SECTION 5 -- OrderBy() and GroupBy() on DataRows
+    // ================================================================
+    static void Section5_OrderByAndGroupBy(DataTable dataTable)
+    {
+        Console.WriteLine("========== SECTION 5 -- OrderBy() / GroupBy() on DataRows ==========");
+
+        // Sort by Title
+        var sortedTitles = dataTable.AsEnumerable()
+            .OrderBy(row =&gt; row.Field&lt;string&gt;("Title"))
+            .Select(row =&gt; row.Field&lt;string&gt;("Title"))
+            .ToList();
+
+        Console.WriteLine("Titles sorted alphabetically:");
+        foreach (var title in sortedTitles)
+            Console.WriteLine($"  {title}");
+        Console.WriteLine();
+
+        // Group by AuthorId, count articles per author
+        var groupedByAuthor = dataTable.AsEnumerable()
+            .GroupBy(row =&gt; row.Field&lt;int&gt;("AuthorId"))
+            .Select(g =&gt; new { AuthorId = g.Key, ArticleCount = g.Count() })
+            .ToList();
+
+        Console.WriteLine("Article count per author:");
+        foreach (var g in groupedByAuthor)
+            Console.WriteLine($"Author {g.AuthorId}: {g.ArticleCount} article(s)");
+        Console.WriteLine();
+    }
+
+
+    // ================================================================
+    // SECTION 6 -- going back to a DataTable with CopyToDataTable()
+    // ================================================================
+    static void Section6_CopyBackToDataTable(DataTable dataTable)
+    {
+        Console.WriteLine("========== SECTION 6 -- CopyToDataTable() ==========");
+
+        // Case A -- query HAS matching rows -- CopyToDataTable() works fine
+        var publishedRows = dataTable.AsEnumerable().Where(row =&gt; row.Field&lt;int&gt;("StatusId") == 5);
+
+        DataTable publishedTable = publishedRows.Any()
+            ? publishedRows.CopyToDataTable()
+            : dataTable.Clone();   // fallback: schema only, zero rows
+
+        Console.WriteLine($"Case A -- publishedTable row count: {publishedTable.Rows.Count}");
+
+        // Case B -- query has ZERO matching rows -- CopyToDataTable() would THROW here,
+        // so we guard with .Any() first, same pattern as above
+        var noMatchRows = dataTable.AsEnumerable().Where(row =&gt; row.Field&lt;int&gt;("StatusId") == 999);
+
+        DataTable emptyResultTable = noMatchRows.Any()
+            ? noMatchRows.CopyToDataTable()
+            : dataTable.Clone();
+
+        Console.WriteLine($"Case B -- emptyResultTable row count: {emptyResultTable.Rows.Count} (schema preserved, zero rows, no crash)");
+        Console.WriteLine();
+    }
+}</code></pre>
+            </div>
         </div>
 
     </main>
